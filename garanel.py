@@ -398,6 +398,7 @@ class Garanel:
             if raid.add_raid_player(player):
                 counter = counter + 1
 
+
         channel = self.guild.get_channel(raid.discord_channel_id)
         await channel.send(mc.prettify(f"+ Log Parsed. {counter} players added", "MD"))
 
@@ -432,9 +433,9 @@ class Garanel:
             await channel.send(mc.prettify(f"{player_to_add.name} is already present", "YELLOW"))
             return False
 
-        dkp_user = self.dkp.get_user_by_char_name(player_to_add.name)
-        if dkp_user:
-            player_to_add.eqdkp_id = dkp_user.id
+        dkp_id = self.dkp.get_char_id_by_name(player_to_add.name)
+        if dkp_id:
+            player_to_add.eqdkp_id = dkp_id
 
         raid.add_raid_player(player_to_add)
         if player_to_add.eqdkp_id:

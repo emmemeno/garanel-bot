@@ -168,6 +168,12 @@ class Dkp:
             return self.users[user_name]['chars']
         return False
 
+    def get_char_id_by_name(self, char_name):
+        for char in self.get_all_chars():
+            if char.name == char_name:
+                return char.id
+        return False
+
     def get_user_by_name(self, user_name):
         if user_name in self.users:
             return self.users[user_name]
