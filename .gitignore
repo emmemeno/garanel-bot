@@ -3,3 +3,5 @@ __pycache__
 logs/garanel.log
 resources/
 config.py
+test.py
+simple_server.py
