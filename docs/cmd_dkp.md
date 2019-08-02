@@ -5,8 +5,10 @@ If you want to get stats from another player just put the player name you are lo
 -
 Examples:
 ```md
-$get-dkp
-$get-dkp Arthion
+$dkp
+$dkp Bob
+$dkp Bobtwink
+$dkp Bob:1234
 ```
 
 
