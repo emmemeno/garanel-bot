@@ -651,7 +651,7 @@ def main():
 
 if __name__ == "__main__":
     # Generic logger
-    log = setup_logger('Garanel', config.LOG_FILE, logging.DEBUG)
+    log = setup_logger('Garanel', config.LOG_FILE, logging.INFO)
 
     logging.config.dictConfig({
         'version': 1,
