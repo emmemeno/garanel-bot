@@ -176,7 +176,7 @@ class LineParser:
     def parse_item(self):
         item_name = item_winner = item_dkp = None
         line = self.line[len("$item-add"):]
-        reg = re.search(r"(http(s)?:\/\/)?wiki.project1999.com\/([-a-zA-Z0-9@:%_\+.~#?&//=]*)", line)
+        reg = re.search(r"(http(s)?:\/\/)?wiki.project1999.com\/([-a-zA-Z0-9@:%_\+'.~#?&//=]*)", line)
         if reg:
             try:
                 item_name = reg.group(0).rsplit("/", 1)[1]
