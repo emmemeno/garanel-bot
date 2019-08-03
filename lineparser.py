@@ -41,6 +41,10 @@ class LineParser:
             self.action = 'GET_DKP'
             if len(self.line) > 5:
                 self.param = self.line[5:].strip(" ").capitalize()
+
+        if low_line.startswith('$dkp-reload'):
+            self.action = 'DKP_RELOAD'
+
         # Status of the raid
         if low_line.startswith('$raid-status'):
             self.action = 'RAID_STATUS'
@@ -70,12 +74,12 @@ class LineParser:
         # Add a Player
         if low_line.startswith('+') and len(self.line) > 4:
             self.action = 'ADD_PLAYER'
-            split_line = self.line[1:].lstrip().split(' ', 1)[0]
+            split_line = low_line[1:].lstrip().split(' ', 1)[0]
             char_name = re.sub('[^A-Za-z]+', '', split_line).capitalize()
             self.players_to_add.append(Player(char_name, anon=True))
 
             # search for minus
-            reg = re.search(r"( on )", self.line)
+            reg = re.search(r"( on )", low_line)
             if reg:
                 char_to_delete = self.line[reg.end():].split(' ', 1)[0]
                 char_to_delete = re.sub('[^A-Za-z]+', '', char_to_delete).capitalize()

@@ -57,8 +57,12 @@ def header_sep(header, sep="-"):
 
 def print_raid_attendees(raid: Raid, filter="ALL"):
     output = ""
+    counter = 0
     for char in raid.get_players(filter=filter):
+        counter += 1
         output += f"+ {char.name}\n"
+    if counter:
+        output += f"\nTotal: {counter} players"
     return output
 
 

@@ -1,7 +1,9 @@
 import json
 import discord
 import config
+import logging
 
+log = logging.getLogger("Garanel")
 
 class Auth:
     def __init__(self):
@@ -20,11 +22,16 @@ class Auth:
             return True
 
     def check(self, bot_role, member: discord.Member):
+        roles_to_check = bot_role.split(":")
         # If input is done privately dont do anything
         if type(member).__name__ == "Member":
-            for role in member.roles:
-                if self.roles[bot_role] == role.id:
-                    return True
+            for m_role in member.roles:
+                for b_role in roles_to_check:
+                    try:
+                        if self.roles[b_role] == m_role.id:
+                            return True
+                    except IndexError as e:
+                        log
         return False
 
     def check_owner(self, discord_id):

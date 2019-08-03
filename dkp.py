@@ -73,7 +73,7 @@ class Dkp:
                     char_counter += 1
                     log.debug(f"EQDKP: Adding {char_name} to {main_name}")
                     self.add_new_char(char_id, char_name, main_name)
-        log.debug(f"EQDKP: Points fetched - {main_counter} mains and {char_counter} chars added")
+        log.info(f"EQDKP: Points fetched - {main_counter} mains and {char_counter} chars added")
         return True
 
     def add_new_user(self, user_id, main_name, dkp_points):
@@ -156,6 +156,11 @@ class Dkp:
                     return user
         return False
 
+    def get_user_by_name(self, user_name):
+        if user_name in self.users:
+            return self.users[user_name]
+        return False
+
     def get_char_by_name(self, find_name):
         for user in self.users:
             for char in self.users[user]['chars']:
@@ -172,11 +177,6 @@ class Dkp:
         for char in self.get_all_chars():
             if char.name == char_name:
                 return char.id
-        return False
-
-    def get_user_by_name(self, user_name):
-        if user_name in self.users:
-            return self.users[user_name]
         return False
 
     def get_points_by_user_name(self, user_name):

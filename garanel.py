@@ -76,6 +76,8 @@ class Garanel:
             await self.get_help(msg.author, lp.param)
         if interpreter == 'GET_DKP':
             await self.get_dkp(msg.channel, msg.author, lp.param)
+        if interpreter == 'DKP_RELOAD':
+            await self.dkp_reload()
         if interpreter == 'ADD_MAIN':
             await self.add_char_main(lp.param)
             self.dkp.last_rest_error = ""
@@ -132,7 +134,7 @@ class Garanel:
     # GET DKP
     ####
     async def get_dkp(self, channel, author, param):
-        # if not self.my_auth.check("member", self.input_author):
+        # if not self.my_auth.check("member:applicant", self.input_author):
         #     return False
         # Can't use this command on raid channels
         if utils.get_raid_by_channel_input_id(self.raid_list, channel.id):
@@ -150,7 +152,7 @@ class Garanel:
                 main_name = self.dkp.get_user_by_char_name(param)
                 find_name = param
         else:
-            main_name = str(author)
+            main_name = str(author).capitalize()
             find_name = main_name
 
         points = self.dkp.get_points_by_user_name(main_name)
@@ -172,6 +174,20 @@ class Garanel:
         recap += f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
 
         await channel.send(recap)
+
+    ####
+    # DKP RELOAD
+    ####
+    async def dkp_reload(self):
+        if not self.my_auth.check("officer", self.input_author):
+            return False
+
+        await self.dkp.load_chars()
+        await self.input_channel.send(mc.prettify(f"DKP Reloaded", "YELLOW"))
+
+        for raid in self.raid_list:
+            # Refresh the DKP status of players
+            raid.refresh_dkp_status(self.dkp.get_all_chars())
 
     ####
     # ADD MAIN CHAR
@@ -212,7 +228,7 @@ class Garanel:
             await self.input_channel.send(mc.prettify("Missing Parameters. Type $add-char user_name player_name", "YELLOW"))
             return False
 
-        user = self.dkp.get_user_by_user_name(user_name)
+        user = self.dkp.get_user_by_name(user_name)
 
         if not user:
             await self.input_channel.send(mc.prettify(f"Main {user_name} not found", "YELLOW"))
@@ -231,7 +247,7 @@ class Garanel:
     # RAID STATUS
     ####
     async def raid_status(self, channel):
-        if not self.my_auth.check("member", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
         raid = utils.get_raid_by_channel_input_id(self.raid_list, channel.id)
@@ -263,7 +279,7 @@ class Garanel:
     # ADD A RAID
     ####
     async def raid_add(self, channel, name_id, date, author):
-        if not self.my_auth.check("member", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
         in_raid = utils.get_raid_by_channel_input_id(self.raid_list, channel.id)
@@ -299,10 +315,9 @@ class Garanel:
         raid.refresh_dkp_status(self.dkp.get_all_chars())
 
         channel = self.client.get_channel(raid.discord_channel_id)
-        final_attendees = mc.print_raid_attendees(raid, filter="ONLY_DKP")
+        final_attendees = mc.print_raid_attendees(raid, filter="ALL")
         final_attendees_not_in_dkp = mc.print_raid_attendees(raid, filter="NO_DKP")
         final_items = mc.print_raid_items(raid)
-
 
         # If the raid is empty, closing will delete
         if not final_attendees:
@@ -344,7 +359,6 @@ class Garanel:
         # else:
         #     await self.input_channel.send(mc.prettify(f"Failed to send this raid: {self.dkp.last_rest_error}", "YELLOW"))
 
-
     ####
     # ARCHIVE A RAID
     ####
@@ -382,7 +396,7 @@ class Garanel:
     # ADD A LOG
     ####
     async def add_log(self, players: list, channel_id, date):
-        if not self.my_auth.check("member", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
         raid = utils.get_raid_by_channel_input_id(self.raid_list, channel_id)
         counter = 0
@@ -416,7 +430,7 @@ class Garanel:
     # ADD RAID PLAYER
     ####
     async def add_raid_player(self, player_to_add, player_to_remove, channel):
-        if not self.my_auth.check("member", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
         raid = utils.get_raid_by_channel_input_id(self.raid_list, channel.id)
@@ -456,7 +470,7 @@ class Garanel:
     # DEL RAID PLAYER
     ####
     async def del_raid_player(self, player_to_remove, channel):
-        if not self.my_auth.check("member", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
         raid = utils.get_raid_by_channel_input_id(self.raid_list, channel.id)
@@ -483,7 +497,7 @@ class Garanel:
     # SET A KILL
     ####
     async def set_kill(self, mode, channel_id):
-        if not self.my_auth.check("member", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
         raid = utils.get_raid_by_channel_input_id(self.raid_list, channel_id)
@@ -507,7 +521,7 @@ class Garanel:
     # SET POINTS
     ####
     async def set_raid_points(self, points):
-        if not self.my_auth.check("member", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
         raid = utils.get_raid_by_channel_input_id(self.raid_list, self.input_channel.id)
@@ -522,7 +536,7 @@ class Garanel:
     # ADD AN ITEM
     ####
     async def item_add(self, channel, name, points, winner):
-        if not self.my_auth.check("member", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
         raid = utils.get_raid_by_channel_input_id(self.raid_list, channel.id)
