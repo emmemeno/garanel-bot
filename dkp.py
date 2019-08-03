@@ -7,7 +7,6 @@ import os
 import datetime
 import aiohttp
 from raid import Raid
-from player import Player
 
 log = logging.getLogger("Garanel")
 
@@ -60,15 +59,15 @@ class Dkp:
                     # if the char name is not the main name create a user with main name and add the char name to it
                     main_counter += 1
                     char_counter += 1
-                    self.add_new_user(char_id, main_name, dkp_total)
+                    self.add_new_user(main_id, main_name, dkp_total)
                     self.add_new_char(char_id, char_name, main_name)
                 # if this is a main char, just add the user
                 else:
                     main_counter += 1
                     self.add_new_user(main_id, main_name, dkp_total)
-            # If there is the user and the player name is not the user name, add the char
+            # If there is the user and the char name is not the user name, add the char
             else:
-                # Don't save main_user as a player_user
+                # Don't save main_user as a char_user
                 if not main_name == char_name:
                     char_counter += 1
                     log.debug(f"EQDKP: Adding {char_name} to {main_name}")
@@ -78,12 +77,12 @@ class Dkp:
 
     def add_new_user(self, user_id, main_name, dkp_points):
         log.debug(f"EQDKP: Adding User {main_name}")
-        self.users.update({main_name: {'user_id': user_id, 'dkp': dkp_points,'chars': []}})
+        self.users.update({main_name: {'user_id': user_id, 'dkp': dkp_points, 'chars': []}})
         return True
 
-    def add_new_char(self, player_id, char_name, main_name):
+    def add_new_char(self, char_id, char_name, main_name):
         log.debug(f"EQDKP: Adding Char {char_name} to {main_name}")
-        self.users[main_name]['chars'].append(DkpChar(player_id, char_name))
+        self.users[main_name]['chars'].append(DkpChar(char_id, char_name))
 
     async def get_raids(self):
         if await self.load_remote_raids():
@@ -203,6 +202,33 @@ class Dkp:
             log.error(f"ADD_REMOTE__CHAR: Error on Sending data to {config.EQDKP_API_URL}: {exc}")
             self.last_rest_error = f"ADD_REMOTE__CHAR: Error on Sending data to {config.EQDKP_API_URL}: {exc}"
             return False
+
+    async def add_adjustment(self, user_id, points, reason):
+        my_item_func = lambda x: 'member'
+        adj_data = {'adjustment_date': datetime.datetime.utcnow().strftime(config.DATE_EQDKP_FORMAT),
+                    'adjustment_members': [user_id],
+                    'adjustment_value': points,
+                    'adjustment_reason': reason
+                   }
+        xml_data = dicttoxml.dicttoxml(adj_data, custom_root='request', attr_type=False, item_func=my_item_func)
+        params = {'function': 'add_adjustment', 'format': 'json', 'atoken': config.EQDKP_API_KEY, 'atype': 'api'}
+        print(xml_data)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(config.EQDKP_API_URL, data=xml_data, params=params) as resp:
+                    response = await resp.json()
+                    log.debug(f"ADD_REMOTE__ADJ: {response}")
+                    if response['status'] == 1:
+                        return response['adjustment_id']
+                    else:
+                        self.last_rest_error = response['error']
+                        return False
+
+        except Exception as exc:
+            log.error(f"ADD_REMOTE__ADJ: Error on Sending data to {config.EQDKP_API_URL}: {exc}")
+            self.last_rest_error = f"ADD_REMOTE__ADJ: Error on Sending data to {config.EQDKP_API_URL}: {exc}"
+            return False
+
 
     async def add_raid(self, raid: Raid):
 

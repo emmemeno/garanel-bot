@@ -78,6 +78,8 @@ class Garanel:
             await self.get_dkp(msg.channel, msg.author, lp.param)
         if interpreter == 'DKP_RELOAD':
             await self.dkp_reload()
+        if interpreter == 'DKP_ADJUST':
+            await self.dkp_adjust(lp.adj_user, lp.adj_points, lp.adj_reason)
         if interpreter == 'ADD_MAIN':
             await self.add_char_main(lp.param)
             self.dkp.last_rest_error = ""
@@ -188,6 +190,26 @@ class Garanel:
         for raid in self.raid_list:
             # Refresh the DKP status of players
             raid.refresh_dkp_status(self.dkp.get_all_chars())
+
+    ####
+    # DKP ADJUST
+    ####
+    async def dkp_adjust(self, user_name, points, reason):
+        if not self.my_auth.check("officer", self.input_author):
+            return False
+        # if not user_name:
+        #     await self.input_channel.send(mc.prettify(f"Syntax error. Please Type $help $dkp-adj", "YELLOW"))
+        #     return False
+        #
+        # user = self.dkp.get_user_by_name(user_name)
+        # if not user:
+        #     await self.input_channel.send(mc.prettify(f"Error: Char not found", "YELLOW"))
+        #     return False
+        # await self.dkp.add_adjustment(user['user_id'], points, reason)
+        # user['user_id'] += points
+        # await self.input_channel.send(mc.prettify(f"{user_name} earned {points} DKP = {reason}", "YELLOW"))
+
+
 
     ####
     # ADD MAIN CHAR
@@ -436,7 +458,6 @@ class Garanel:
         raid = utils.get_raid_by_channel_input_id(self.raid_list, channel.id)
         if not raid or raid.close:
             return False
-
         if not len(player_to_add):
             await channel.send(mc.prettify("No player inserted", "YELLOW"))
             return False
@@ -665,7 +686,10 @@ def main():
 
 if __name__ == "__main__":
     # Generic logger
-    log = setup_logger('Garanel', config.LOG_FILE, logging.INFO)
+    if config.DEBUG:
+        log = setup_logger('Garanel', config.LOG_FILE, logging.DEBUG)
+    else:
+        log = setup_logger('Garanel', config.LOG_FILE, logging.INFO)
 
     logging.config.dictConfig({
         'version': 1,

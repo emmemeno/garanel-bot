@@ -20,7 +20,11 @@ class LineParser:
         self.item_winner = None
         self.log_date = None
         self.split_words = None
+        self.adj_user = None
+        self.adj_points = None
+        self.adj_reason = None
         self.error = None
+
 
     def process(self):
         if not self.line:
@@ -44,6 +48,20 @@ class LineParser:
 
         if low_line.startswith('$dkp-reload'):
             self.action = 'DKP_RELOAD'
+
+        if low_line.startswith('$dkp-adj'):
+            self.action = 'DKP_ADJUST'
+            reg = re.search(r"([A-Za-z#]+[0-9]{4,4}\b) (\+|-)?([0-9]{1,3}) ['\"](.*?)['\"]", self.line[9:])
+            if reg:
+                self.adj_user = reg.group(1).capitalize()
+                if not reg.group(2):
+                    sign = "+"
+                else:
+                    sign = reg.group(2)
+                self.adj_points = float(sign + reg.group(3))
+                self.adj_reason = reg.group(4)
+
+
 
         # Status of the raid
         if low_line.startswith('$raid-status'):
@@ -76,7 +94,8 @@ class LineParser:
             self.action = 'ADD_PLAYER'
             split_line = low_line[1:].lstrip().split(' ', 1)[0]
             char_name = re.sub('[^A-Za-z]+', '', split_line).capitalize()
-            self.players_to_add.append(Player(char_name, anon=True))
+            if char_name:
+                self.players_to_add.append(Player(char_name, anon=True))
 
             # search for minus
             reg = re.search(r"( on )", low_line)
