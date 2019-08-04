@@ -94,6 +94,8 @@ def print_dkp_char_points(points):
 
 
 def print_dkp_char_items(items):
+    if not items:
+        return ""
     header = "**ITEMS**"
     recap = ""
     for item in items:
