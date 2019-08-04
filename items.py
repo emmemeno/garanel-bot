@@ -38,6 +38,7 @@ class Items:
                 self.items_by_user[winner].append({"name": item_name, "value": item_value})
 
     def get_items_by_user(self, user_name):
-        return self.items_by_user[user_name]
+        if user_name in self.items_by_user:
+            return self.items_by_user[user_name]
 
 
