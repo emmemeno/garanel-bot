@@ -92,10 +92,8 @@ class LineParser:
         # Add a Player
         if low_line.startswith('+') and len(self.line) > 4:
             self.action = 'ADD_PLAYER'
-            split_line = low_line[1:].lstrip().split(' ', 1)[0]
+            split_line = low_line[1:].lstrip().lstrip(" ")
             reg = re.search(r"^(([A-Za-z]+)([^A-Za-z]+)?)(on (\w+))?", split_line)
-            print(f"line {split_line}")
-            print(f"reg {reg}")
             if reg:
                 if reg.group(2):
                     self.players_to_add.append(Player(reg.group(2).capitalize(), anon=True))
