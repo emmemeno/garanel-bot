@@ -76,7 +76,7 @@ def print_raid_items(raid: Raid):
 
 
 def print_dkp_char_list(user_name, chars):
-    header = "**Chars**"
+    header = "**CHARS**"
     recap = ""
     for char in chars:
         # skip discord chars

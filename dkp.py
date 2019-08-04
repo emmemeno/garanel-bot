@@ -23,7 +23,7 @@ class Dkp:
 
     def __init__(self):
         self.users = {}
-        self.items = Items()
+        self.items = None
         self.raw_points = None
         self.raw_raids = None
         self.points_last_read = None
@@ -47,6 +47,7 @@ class Dkp:
             return False
 
         self.users.clear()
+        self.items = Items()
 
         for player in self.raw_points['players']:
             main_name = self.raw_points['players'][player]['main_name'].lower().capitalize()
