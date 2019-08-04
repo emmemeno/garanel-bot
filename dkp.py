@@ -7,6 +7,8 @@ import os
 import datetime
 import aiohttp
 from raid import Raid
+from items import Items
+from pprint import pprint
 
 log = logging.getLogger("Garanel")
 
@@ -21,6 +23,7 @@ class Dkp:
 
     def __init__(self):
         self.users = {}
+        self.items = Items()
         self.raw_points = None
         self.raw_raids = None
         self.points_last_read = None
@@ -50,34 +53,39 @@ class Dkp:
             char_name = self.raw_points['players'][player]['name'].lower().capitalize()
             char_id = int(self.raw_points['players'][player]['id'])
             main_id = int(self.raw_points['players'][player]['main_id'])
-            dkp_total = self.raw_points['players'][player]['points']['multidkp_points:1']['points_current_with_twink']
-            dkp_total = int(round(float(dkp_total)))
+            dkp_current = self.raw_points['players'][player]['points']['multidkp_points:1']['points_current_with_twink']
+            dkp_current = int(round(float(dkp_current)))
+            dkp_spent = self.raw_points['players'][player]['points']['multidkp_points:1']['points_spent_with_twink']
+            dkp_spent = int(round(float(dkp_spent)))
+            dkp_earned = self.raw_points['players'][player]['points']['multidkp_points:1']['points_earned_with_twink']
+            dkp_earned = int(round(float(dkp_earned)))
+            items = self.raw_points['players'][player]['items']
 
             # If there is no user, create it!
             if main_name not in self.users:
-                if not char_id == main_id:
-                    # if the char name is not the main name create a user with main name and add the char name to it
-                    main_counter += 1
-                    char_counter += 1
-                    self.add_new_user(main_id, main_name, dkp_total)
-                    self.add_new_char(char_id, char_name, main_name)
-                # if this is a main char, just add the user
-                else:
-                    main_counter += 1
-                    self.add_new_user(main_id, main_name, dkp_total)
-            # If there is the user and the char name is not the user name, add the char
-            else:
-                # Don't save main_user as a char_user
-                if not main_name == char_name:
-                    char_counter += 1
-                    log.debug(f"EQDKP: Adding {char_name} to {main_name}")
-                    self.add_new_char(char_id, char_name, main_name)
+                main_counter += 1
+                self.add_new_user(main_id, main_name, dkp_current, dkp_spent, dkp_earned)
+
+            # Add the Char
+            char_counter += 1
+            log.debug(f"EQDKP: Adding {char_name} to {main_name}")
+            self.add_new_char(char_id, char_name, main_name)
+
+            # Add Items
+            self.items.add(items, main_name)
+
+        # pprint(sorted(self.items.items_by_user.items(), key=lambda x: x))
+
         log.info(f"EQDKP: Points fetched - {main_counter} mains and {char_counter} chars added")
         return True
 
-    def add_new_user(self, user_id, main_name, dkp_points):
+    def add_new_user(self, user_id, main_name, dkp_current=0, dkp_spent=0, dkp_earned=0):
         log.debug(f"EQDKP: Adding User {main_name}")
-        self.users.update({main_name: {'user_id': user_id, 'dkp': dkp_points, 'chars': []}})
+        self.users.update({main_name: {'user_id': user_id,
+                                       'dkp': {'current': dkp_current,
+                                               'spent': dkp_spent,
+                                               'earned': dkp_earned},
+                                       'chars': []}})
         return True
 
     def add_new_char(self, char_id, char_name, main_name):
@@ -100,7 +108,7 @@ class Dkp:
     async def load_remote_chars(self):
 
         log.info("EQDKP: Loading Remote Points file...")
-        params = {'function': "points", 'format': 'json', 'atoken': config.EQDKP_API_KEY, 'atype': 'api'}
+        params = {'function': "points", 'format': 'json', 'memberdata': 'items', 'atoken': config.EQDKP_API_KEY, 'atype': 'api'}
         self.raw_points = await utils.load_remote_json(config.EQDKP_API_URL, params=params)
         if self.raw_points:
             return True
@@ -124,7 +132,7 @@ class Dkp:
         log.info("EQDKP: Loading Remote Raids file...")
         params = {'function': "raids", 'format': 'json', 'atoken': config.EQDKP_API_KEY, 'atype': 'api'}
         self.raw_raids = await utils.load_remote_json(config.EQDKP_API_URL, params=params)
-        if self.raw_points:
+        if self.raw_raids:
             return True
         return False
 

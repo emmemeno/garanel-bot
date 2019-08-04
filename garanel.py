@@ -147,33 +147,27 @@ class Garanel:
             return False
 
         if param:
-            if "#" in param:
-                main_name = param
-                find_name = main_name
-            else:
-                main_name = self.dkp.get_user_by_char_name(param)
-                find_name = param
+            user_name = self.dkp.get_user_by_char_name(param)
+            find_name = param
         else:
-            main_name = str(author).capitalize()
-            find_name = main_name
+            user_name = str(author).capitalize()
+            find_name = user_name
 
-        points = self.dkp.get_points_by_user_name(main_name)
-        chars = self.dkp.get_chars_by_user_name(main_name)
+
+        points = self.dkp.get_points_by_user_name(user_name)
+        chars = self.dkp.get_chars_by_user_name(user_name)
 
         if not chars:
-            if self.dkp.get_user_by_name(main_name):
+            if self.dkp.get_user_by_name(user_name):
                 await channel.send(mc.prettify(f"+ {find_name} has no characters", "MD"))
             else:
                 await channel.send(mc.prettify(f"+ {find_name} not found", "MD"))
             return False
 
-        recap = f"[{main_name}]\n"
-        recap += mc.header_sep(recap) + "\n"
-        for char in chars:
-            recap += f"+ {char.name}\n"
-        recap += f"\nTotal DKP: {points}"
-        recap = mc.prettify(recap, "CSS")
-        recap += f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
+        chars_recap = mc.print_dkp_char_list(user_name, chars,)
+        dkp_recap = mc.print_dkp_char_points(points)
+        items_recap = mc.print_dkp_char_items(self.dkp.items.get_items_by_user(user_name))
+        recap = chars_recap + dkp_recap + items_recap + f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
 
         await channel.send(recap)
 
@@ -227,7 +221,7 @@ class Garanel:
             return False
         player_id = await self.dkp.add_remote_char(param, 0)
         if player_id:
-            self.dkp.add_new_user(player_id, param, dkp_points=0)
+            self.dkp.add_new_user(player_id, param, dkp_current=0)
             await self.input_channel.send(mc.prettify(f"Main {param} added!", "YELLOW"))
         else:
             await self.input_channel.send(mc.prettify(f"Failed to add {param}: {self.dkp.last_rest_error}", "YELLOW"))

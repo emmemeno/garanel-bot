@@ -1,4 +1,5 @@
 from raid import Raid
+import timehandler as timeh
 
 def message_cut(input_text: str, limit: int):
     """
@@ -72,4 +73,31 @@ def print_raid_items(raid: Raid):
 
         output += f"+ {item['name']}: {item['points']} DKP to {item['winner']}\n"
     return output
+
+
+def print_dkp_char_list(user_name, chars):
+    header = "**Chars**"
+    recap = ""
+    for char in chars:
+        # skip discord chars
+        if "#" not in char.name:
+            recap += f"+ {char.name}\n"
+    recap = header + prettify(recap, "MD")
+    return recap
+
+
+def print_dkp_char_points(points):
+    header = "**DKP POINTS**"
+    recap = f"+ Current: {points['current']}\n+ Spent: {points['spent']}\n+ Earned: {points['earned']}"
+    recap = header + prettify(recap, "MD")
+    return recap
+
+
+def print_dkp_char_items(items):
+    header = "**ITEMS**"
+    recap = ""
+    for item in items:
+        recap += f"+ {item['name']}: {item['value']}\n"
+    recap = header + prettify(recap, "MD")
+    return recap
 

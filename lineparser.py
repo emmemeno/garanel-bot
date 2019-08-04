@@ -93,16 +93,14 @@ class LineParser:
         if low_line.startswith('+') and len(self.line) > 4:
             self.action = 'ADD_PLAYER'
             split_line = low_line[1:].lstrip().split(' ', 1)[0]
-            char_name = re.sub('[^A-Za-z]+', '', split_line).capitalize()
-            if char_name:
-                self.players_to_add.append(Player(char_name, anon=True))
-
-            # search for minus
-            reg = re.search(r"( on )", low_line)
+            reg = re.search(r"^(([A-Za-z]+)([^A-Za-z]+)?)(on (\w+))?", split_line)
+            print(f"line {split_line}")
+            print(f"reg {reg}")
             if reg:
-                char_to_delete = self.line[reg.end():].split(' ', 1)[0]
-                char_to_delete = re.sub('[^A-Za-z]+', '', char_to_delete).capitalize()
-                self.players_to_remove.append(Player(char_to_delete, anon=True))
+                if reg.group(2):
+                    self.players_to_add.append(Player(reg.group(2).capitalize(), anon=True))
+                if reg.group(5):
+                    self.players_to_remove.append(Player(reg.group(5).capitalize(), anon=True))
 
         # Remove a Player
         if low_line.startswith('-') and len(self.line) > 4:
