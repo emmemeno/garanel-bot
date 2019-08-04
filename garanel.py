@@ -281,8 +281,8 @@ class Garanel:
         current_attendees_not_in_dkp = mc.print_raid_attendees(raid, filter="NO_DKP")
         current_items = mc.print_raid_items(raid)
 
-        if not raid.log_loaded:
-            await channel.send(mc.prettify("No log inserted yet!", "YELLOW"))
+        if not current_attendees:
+            await channel.send(mc.prettify("Empty!", "YELLOW"))
             return False
         if current_attendees:
             await channel.send("**Current Attendees**\n" + mc.prettify(current_attendees, "MD"))
@@ -324,7 +324,7 @@ class Garanel:
             return False
 
         raid = utils.get_raid_by_channel_input_id(self.raid_list, channel_id)
-        if not raid or raid.close:
+        if not raid:
             return False
 
         # Refresh the DKP status of players

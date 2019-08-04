@@ -7,8 +7,7 @@ import os
 import datetime
 import aiohttp
 from raid import Raid
-from items import Items
-from pprint import pprint
+from dkp_items import Items
 
 log = logging.getLogger("Garanel")
 
