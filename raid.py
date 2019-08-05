@@ -18,7 +18,7 @@ class Player:
         output = ""
 
         if self.afk:
-            output += "  AFK "
+            output += " AFK "
         if self.anon:
             output += f"[ANONYMOUS] {self.name}  "
         else:
@@ -74,21 +74,32 @@ class Raid:
         self.log_final = log_final
         self.close = close
 
-    def add_raid_player(self, player: Player):
+    def add_raid_player(self, player: Player, dkp):
         if self.has_player_by_name(player.name):
             return False
         else:
+            # Add player to raid
             self.players.append(player)
+            # Add pending raid to user
+            user = dkp.get_user_by_char_name(player.name)
+            if user:
+                dkp.users[user]['pending_raids'].append(self)
+                log.info(f"ADD PENDING RAID TO USER: {user}")
             self.players.sort(key=lambda x: x.name, reverse=False)
             return True
 
     # def add_player_by_name(self, player_name: str):
     #     self.players.append(Player(player_name, anon=True))
 
-    def del_raid_player(self, player: Player):
+    def del_raid_player(self, player: Player, dkp):
         get_char = self.has_player_by_name(player.name)
         if get_char:
             self.players.remove(get_char)
+            # Remove pending raid to user
+            user = dkp.get_user_by_char_name(player.name)
+            if user:
+                dkp.users[user]['pending_raids'].remove(self)
+                log.info(f"REMOVE PENDING RAID TO USER: {user}")
             return True
         else:
             return False
@@ -147,12 +158,23 @@ class Raid:
                         # Update the player
                         player.eqdkp_id = char.id
                         # Update the user
-                        dkp_users[user]['pending_raids'].append(self)
-                        log.debug(f"RAID SYNC: U_ID {dkp_users[user]['user_id']} added to pending raid")
+                        if self not in dkp_users[user]['pending_raids']:
+                            dkp_users[user]['pending_raids'].append(self)
+                        log.debug(f"RAID SYNC: {user} added to pending raid")
                     else:
                         char.eqdkp_id = False
         log.info(f"RAID {self.name_id}: Done!")
         self.save()
+
+    def delete_pending_raids_from_user(self, dkp_users):
+        log.info(f"RAID SYNC: Deleting Pending Raids from Users")
+        for user in dkp_users:
+            for char in dkp_users[user]['chars']:
+                for player in self.players:
+                    # Update the user
+                    if char.name == player.name:
+                        dkp_users[user]['pending_raids'].remove(self)
+                        log.debug(f"RAID SYNC: Deleting {user} from pending raid")
 
     def create_log_file(self):
         status = ""

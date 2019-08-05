@@ -67,9 +67,10 @@ class Garanel:
         # Assign temporary variables
         self.input_author = msg.author
         self.input_channel = msg.channel
-
         lp = lineparser.LineParser(msg.content)
         interpreter = lp.process()
+        if interpreter:
+            log.info(f"INPUT: {str(self.input_author)} - {msg.content}")
 
         if interpreter == 'ABOUT':
             await self.get_about(msg.author)
@@ -419,6 +420,8 @@ class Garanel:
         utils.remove_json_raid(raid)
         utils.remove_log_raid(raid)
         log.info(f"Raid {raid.name_id} was archived. Log file: {raid.log_final}")
+        # Remove pending players from raid
+        raid.delete_pending_raids_from_user(self.dkp.users)
         self.raid_list.remove(raid)
 
     ####
@@ -438,7 +441,7 @@ class Garanel:
             dkp_char = self.dkp.get_char_by_name(player.name)
             if dkp_char:
                 player.eqdkp_id = dkp_char.id
-            if raid.add_raid_player(player):
+            if raid.add_raid_player(player, self.dkp):
                 counter = counter + 1
 
 
@@ -479,7 +482,7 @@ class Garanel:
         if dkp_id:
             player_to_add.eqdkp_id = dkp_id
 
-        raid.add_raid_player(player_to_add)
+        raid.add_raid_player(player_to_add, self.dkp)
         if player_to_add.eqdkp_id:
             await channel.send(mc.prettify(f"+ {player_to_add.name} was added to this raid", "MD"))
         else:
@@ -489,7 +492,7 @@ class Garanel:
             if not raid.has_player_by_name(player_to_remove[0].name):
                 await channel.send(mc.prettify(f"{player_to_remove[0].name} is not present", "YELLOW"))
                 return False
-            raid.del_raid_player(player_to_remove[0])
+            raid.del_raid_player(player_to_remove[0], self.dkp)
             await channel.send(mc.prettify(f"- {player_to_remove[0].name} was removed from this raid", "MD"))
 
         raid.save()
@@ -516,7 +519,7 @@ class Garanel:
             await channel.send(mc.prettify(f"{player_to_remove.name} is not present", "YELLOW"))
             return False
 
-        raid.del_raid_player(player_to_remove)
+        raid.del_raid_player(player_to_remove, self.dkp)
 
         await channel.send(mc.prettify(f"- {player_to_remove.name} was removed from this raid", "MD"))
         raid.save()
