@@ -174,7 +174,6 @@ class Garanel:
         raids_recap = mc.print_dkp_user_raids(self.dkp.dkp_raids.raids_by_user_id, chars, self.dkp)
         pending_raids_recap = mc.print_user_pending_raids(user)
         recap = chars_recap + dkp_recap + items_recap + raids_recap + pending_raids_recap + f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
-        print(len(recap))
         await author.send(recap)
 
     ####
@@ -436,7 +435,6 @@ class Garanel:
             return False
 
         raid.log_loaded = True
-        print(f"New Date {raid.date}")
         for player in players:
             dkp_char = self.dkp.get_char_by_name(player.name)
             if dkp_char:
