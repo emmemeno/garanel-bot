@@ -175,7 +175,7 @@ class Garanel:
         pending_raids_recap = mc.print_user_pending_raids(user)
         recap = chars_recap + dkp_recap + items_recap + raids_recap + pending_raids_recap + f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
         print(len(recap))
-        await channel.send(recap)
+        await author.send(recap)
 
     ####
     # DKP RELOAD
