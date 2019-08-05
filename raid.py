@@ -148,7 +148,7 @@ class Raid:
                         player.eqdkp_id = char.id
                         # Update the user
                         dkp_users[user]['pending_raids'].append(self)
-                        log.info(f"RAID SYNC: U_ID {dkp_users[user]['user_id']} added to pending raid")
+                        log.debug(f"RAID SYNC: U_ID {dkp_users[user]['user_id']} added to pending raid")
                     else:
                         char.eqdkp_id = False
         log.info(f"RAID {self.name_id}: Done!")
