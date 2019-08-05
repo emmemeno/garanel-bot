@@ -44,7 +44,9 @@ class Player:
 
 log = logging.getLogger("Garanel")
 
+
 class Raid:
+
     def __init__(self,
                  name_id: str,
                  date: str,
@@ -73,6 +75,10 @@ class Raid:
         self.points = points
         self.log_final = log_final
         self.close = close
+
+    def __repr__(self):
+        return self.name_id
+
 
     def add_raid_player(self, player: Player, dkp):
         if self.has_player_by_name(player.name):

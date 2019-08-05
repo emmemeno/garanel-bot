@@ -50,6 +50,7 @@ class Garanel:
         self.my_auth = Auth()
         self.input_author = None
         self.input_channel = None
+        self.connected = False
 
     def run(self):
         self.client.loop.create_task(self.minute_digest())
@@ -60,8 +61,10 @@ class Garanel:
 
     async def on_ready(self):
         log.info(f"Garanel connected to Discord ({config.DISCORD_TOKEN})")
+        self.connected = True
         self.guild = self.client.get_guild(config.GUILD_ID)
         self.my_auth.load_roles(config.ROLES_FILE)
+        await self.reorder_raid_channels()
 
     async def on_message(self, msg):
         # Assign temporary variables
@@ -666,6 +669,13 @@ class Garanel:
                 await self.input_author.send(mc.prettify("Error interpreting the line. "
                                                          "Use '$role bot_role discord_id'", "YELLOW"))
 
+    async def reorder_raid_channels(self):
+        reversed_list = self.raid_list
+        reversed_list.reverse()
+        for i, raid in enumerate(reversed_list):
+            channel = self.client.get_channel(raid.discord_channel_id)
+            await channel.edit(position=i)
+
 
     async def minute_digest(self):
         tic = 60
@@ -677,7 +687,10 @@ class Garanel:
     async def eqdkp_sync(self):
         tic = 60*60
         while True:
+            if self.connected == True:
+                await self.reorder_raid_channels()
             await self.dkp.load_dkp_chars()
+            await asyncio.sleep(10)
             await self.dkp.load_dkp_raids()
             for raid in self.raid_list:
                 # Refresh the DKP status of players

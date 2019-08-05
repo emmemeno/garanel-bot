@@ -43,6 +43,9 @@ def load_raids(path):
                               item_list,
                               ))
         log.debug(f"Raid Loaded: {raid['name_id']}")
+    # Sort by date creation
+    raid_list.sort(key=lambda x: x.date)
+    print(raid_list)
     return raid_list
 
 
