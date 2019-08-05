@@ -314,7 +314,7 @@ class Garanel:
             return False
 
         category = self.guild.get_channel(config.RAID_CATEGORY_ID)
-        raid_channel = await self.guild.create_text_channel(name_id, category=category, position=(100-len(self.raid_list)))
+        raid_channel = await self.guild.create_text_channel(name_id, category=category)
         await self.input_channel.send(mc.prettify(f"Raid created", "YELLOW") + f"<#{raid_channel.id}>")
         await raid_channel.send(mc.prettify(f"+ Raid created by {self.input_author.name}", "MD"))
         await raid_channel.send(mc.prettify(config.TEXT_WELCOME_TO_RAID, "YELLOW"))
@@ -330,6 +330,7 @@ class Garanel:
                                    [],
                                    []))
 
+        await self.reorder_raid_channels()
         self.raid_list[-1].save()
 
     ####
@@ -670,11 +671,14 @@ class Garanel:
                                                          "Use '$role bot_role discord_id'", "YELLOW"))
 
     async def reorder_raid_channels(self):
-        reversed_list = self.raid_list
+        reversed_list = self.raid_list.copy()
         reversed_list.reverse()
         for i, raid in enumerate(reversed_list):
             channel = self.client.get_channel(raid.discord_channel_id)
             await channel.edit(position=i)
+        print("REVERSED LIST")
+        print(reversed_list)
+        del reversed_list
 
 
     async def minute_digest(self):

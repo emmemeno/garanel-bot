@@ -169,7 +169,7 @@ class Raid:
                         log.debug(f"RAID SYNC: {user} added to pending raid")
                     else:
                         char.eqdkp_id = False
-        log.info(f"RAID {self.name_id}: Done!")
+        log.info(f"RAID SYNC: {self.name_id}: Done!")
         self.save()
 
     def delete_pending_raids_from_user(self, dkp_users):
@@ -220,7 +220,7 @@ class Raid:
             mode = "a"
         with open(file_url, mode) as outfile:
             json.dump(self.serialize(), outfile, indent=4)
-        log.info(f"Raid {self.name_id} saved.")
+        log.info(f"RAID: {self.name_id} saved.")
         return True
 
 
