@@ -4,7 +4,7 @@ import glob
 import aiohttp
 import json
 from raid import Raid
-from player import Player
+from raid import Player
 import logging
 
 log = logging.getLogger("Garanel")

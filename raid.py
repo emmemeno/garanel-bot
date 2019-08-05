@@ -1,9 +1,45 @@
 import os
 import logging
-from player import Player
 import config
 import json
 from datetime import datetime
+
+class Player:
+    def __init__(self, name, anon=False, lvl=None, role=None, race=None, afk=False, eqdkp=None):
+        self.name = name
+        self.lvl = lvl
+        self.role = role
+        self.race = race
+        self.anon = anon
+        self.afk = afk
+        self.eqdkp_id = eqdkp
+
+    def get_log_line(self):
+        output = ""
+
+        if self.afk:
+            output += "  AFK "
+        if self.anon:
+            output += f"[ANONYMOUS] {self.name}  "
+        else:
+            output += f"[{self.lvl} {self.role}] {self.name} ({self.race}) "
+
+        output += f"<{config.GUILD_NAME}>"
+
+        return output
+
+    def __repr__(self):
+        return self.name
+
+    def serialize(self):
+        return {"name": self.name,
+                "anon": self.anon,
+                "lvl": self.lvl,
+                "role": self.role,
+                "race": self.race,
+                "afk": self.afk,
+                'eqdkp_id': self.eqdkp_id
+                }
 
 
 log = logging.getLogger("Garanel")
@@ -22,8 +58,12 @@ class Raid:
                  items: list,
                  ):
         self.name_id = name_id
-        self.date_log = date
-        self.date_creation = datetime.utcnow()
+        try:
+            self.date = datetime.strptime(date, config.DATE_EQDKP_FORMAT)
+        except ValueError as e:
+            log.error(f"RAID: Error loading Date: {e}")
+            self.date = datetime.utcnow()
+
         self.players = players
         self.items = items
         self.discord_channel_id = discord_channel_id
@@ -95,15 +135,22 @@ class Raid:
                 output.append(player.eqdkp_id)
         return output
 
+    def get_log_format_date(self):
+        return self.date.strftime(config.DATE_EQ_LOG_FORMAT)
 
-    def refresh_dkp_status(self, dkp_chars):
-        log.info(f"RAID {self.name_id}: Syncing raid players to eqdkp chars...")
-        for char in dkp_chars:
-            for player in self.players:
-                if char.name == player.name:
-                    player.eqdkp_id = char.id
-                else:
-                    char.eqdkp_id = False
+    def refresh_dkp_status(self, dkp_users):
+        log.info(f"RAID SYNC: {self.name_id} refreshing...")
+        for user in dkp_users:
+            for char in dkp_users[user]['chars']:
+                for player in self.players:
+                    if char.name == player.name:
+                        # Update the player
+                        player.eqdkp_id = char.id
+                        # Update the user
+                        dkp_users[user]['pending_raids'].append(self)
+                        log.info(f"RAID SYNC: U_ID {dkp_users[user]['user_id']} added to pending raid")
+                    else:
+                        char.eqdkp_id = False
         log.info(f"RAID {self.name_id}: Done!")
         self.save()
 
@@ -117,7 +164,7 @@ class Raid:
         file_name = f"{self.name_id}{status}.txt"
         with open(config.PATH_HISTORY+file_name, 'a') as output_file:
             for char in self.players:
-                output_file.write(f"[{self.date_log}] {char.get_log_line()}\n")
+                output_file.write(f"[{self.get_log_format_date()}] {char.get_log_line()}\n")
         self.log_final = file_name
         return file_name
 
@@ -126,7 +173,7 @@ class Raid:
         for char in self.players:
             player_list.append(char.serialize())
         return {'name_id': self.name_id,
-                'date': self.date_log,
+                'date': self.date.strftime(config.DATE_EQDKP_FORMAT),
                 'discord_channel_id': self.discord_channel_id,
                 'close': self.close,
                 'kill': self.kill,

@@ -12,6 +12,7 @@ import messagecomposer as mc
 import dkp
 import timehandler as timeh
 import helper
+from datetime import datetime
 
 
 ##############
@@ -89,7 +90,7 @@ class Garanel:
         if interpreter == 'RAID_STATUS':
             await self.raid_status(msg.channel)
         if interpreter == 'RAID_ADD':
-            await self.raid_add(msg.channel, lp.raid_name_id, timeh.now().strftime("%b-%d"), msg.author.name)
+            await self.raid_add(lp.raid_name_id)
         if interpreter == 'RAID_CLOSE':
             await self.raid_close(msg.channel.id)
         if interpreter == 'RAID_SEND':
@@ -153,22 +154,26 @@ class Garanel:
             user_name = str(author).capitalize()
             find_name = user_name
 
+        user = self.dkp.get_user_by_name(user_name)
+
+        if not user:
+            await channel.send(mc.prettify(f"+ {find_name} not found", "MD"))
+            return False
 
         points = self.dkp.get_points_by_user_name(user_name)
         chars = self.dkp.get_chars_by_user_name(user_name)
 
         if not chars:
-            if self.dkp.get_user_by_name(user_name):
-                await channel.send(mc.prettify(f"+ {find_name} has no characters", "MD"))
-            else:
-                await channel.send(mc.prettify(f"+ {find_name} not found", "MD"))
-            return False
+            await channel.send(mc.prettify(f"+ {find_name} has no characters", "MD"))
 
         chars_recap = mc.print_dkp_char_list(user_name, chars,)
         dkp_recap = mc.print_dkp_char_points(points)
-        items_recap = mc.print_dkp_char_items(self.dkp.items.get_items_by_user(user_name))
-        recap = chars_recap + dkp_recap + items_recap + f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
+        items_recap = mc.print_dkp_user_items(self.dkp.dkp_items.get_items_by_user(user_name))
 
+        raids_recap = mc.print_dkp_user_raids(self.dkp.dkp_raids.raids_by_user_id, chars, self.dkp)
+        pending_raids_recap = mc.print_user_pending_raids(user)
+        recap = chars_recap + dkp_recap + items_recap + raids_recap + pending_raids_recap + f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
+        print(len(recap))
         await channel.send(recap)
 
     ####
@@ -178,7 +183,7 @@ class Garanel:
         if not self.my_auth.check("officer", self.input_author):
             return False
 
-        await self.dkp.load_chars()
+        await self.dkp.load_dkp_chars()
         await self.input_channel.send(mc.prettify(f"DKP Reloaded", "YELLOW"))
 
         for raid in self.raid_list:
@@ -202,8 +207,6 @@ class Garanel:
         # await self.dkp.add_adjustment(user['user_id'], points, reason)
         # user['user_id'] += points
         # await self.input_channel.send(mc.prettify(f"{user_name} earned {points} DKP = {reason}", "YELLOW"))
-
-
 
     ####
     # ADD MAIN CHAR
@@ -275,7 +278,7 @@ class Garanel:
             return False
 
         # Refresh the DKP status of players
-        raid.refresh_dkp_status(self.dkp.get_all_chars())
+        raid.refresh_dkp_status(self.dkp.users)
 
         current_attendees = mc.print_raid_attendees(raid, filter="ALL")
         current_attendees_not_in_dkp = mc.print_raid_attendees(raid, filter="NO_DKP")
@@ -294,26 +297,36 @@ class Garanel:
     ####
     # ADD A RAID
     ####
-    async def raid_add(self, channel, name_id, date, author):
+    async def raid_add(self, name_id):
         if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
-        in_raid = utils.get_raid_by_channel_input_id(self.raid_list, channel.id)
+        in_raid = utils.get_raid_by_channel_input_id(self.raid_list, self.input_channel.id)
         if in_raid:
             return False
 
         check_raid = utils.get_raid_by_name_id(self.raid_list, name_id)
         if check_raid:
-            await channel.send(mc.prettify(f"Raid already present!", "YELLOW") + f"<#{check_raid.discord_channel_id}>")
+            await self.input_channel.send(mc.prettify(f"Raid already present!", "YELLOW") + f"<#{check_raid.discord_channel_id}>")
             return False
 
         category = self.guild.get_channel(config.RAID_CATEGORY_ID)
         raid_channel = await self.guild.create_text_channel(name_id, category=category, position=(100-len(self.raid_list)))
-        await raid_channel.send(mc.prettify(f"+ Raid created by {author}", "MD"))
+        await self.input_channel.send(mc.prettify(f"Raid created", "YELLOW") + f"<#{raid_channel.id}>")
+        await raid_channel.send(mc.prettify(f"+ Raid created by {self.input_author.name}", "MD"))
         await raid_channel.send(mc.prettify(config.TEXT_WELCOME_TO_RAID, "YELLOW"))
 
-        self.raid_list.append(Raid(name_id, date, raid_channel.id, False, None, 0, False, "", [], []))
-        await channel.send(mc.prettify(f"Raid created", "YELLOW") + f"<#{raid_channel.id}>")
+        self.raid_list.append(Raid(name_id,
+                                   datetime.utcnow().strftime(config.DATE_EQDKP_FORMAT),
+                                   raid_channel.id,
+                                   False,
+                                   None,
+                                   0,
+                                   False,
+                                   "",
+                                   [],
+                                   []))
+
         self.raid_list[-1].save()
 
     ####
@@ -328,7 +341,7 @@ class Garanel:
             return False
 
         # Refresh the DKP status of players
-        raid.refresh_dkp_status(self.dkp.get_all_chars())
+        raid.refresh_dkp_status(self.dkp.users)
 
         channel = self.client.get_channel(raid.discord_channel_id)
         final_attendees = mc.print_raid_attendees(raid, filter="ALL")
@@ -420,7 +433,8 @@ class Garanel:
             return False
 
         raid.log_loaded = True
-        raid.date = date
+        raid.date = datetime.strptime(date, config.DATE_EQ_LOG_FORMAT)
+        print(f"New Date {raid.date}")
         for player in players:
             dkp_char = self.dkp.get_char_by_name(player.name)
             if dkp_char:
@@ -663,11 +677,11 @@ class Garanel:
     async def eqdkp_sync(self):
         tic = 60*60
         while True:
-            await self.dkp.load_chars()
-            await self.dkp.get_raids()
+            await self.dkp.load_dkp_chars()
+            await self.dkp.load_dkp_raids()
             for raid in self.raid_list:
                 # Refresh the DKP status of players
-                raid.refresh_dkp_status(self.dkp.get_all_chars())
+                raid.refresh_dkp_status(self.dkp.users)
             await asyncio.sleep(tic)
 
 

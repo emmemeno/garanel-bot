@@ -8,6 +8,7 @@ import datetime
 import aiohttp
 from raid import Raid
 from dkp_items import Items
+import dkp_raids
 
 log = logging.getLogger("Garanel")
 
@@ -22,14 +23,15 @@ class Dkp:
 
     def __init__(self):
         self.users = {}
-        self.items = None
+        self.dkp_raids = None
+        self.dkp_items = None
         self.raw_points = None
         self.raw_raids = None
         self.points_last_read = None
         self.raids_last_read = None
         self.last_rest_error = None
 
-    async def load_chars(self):
+    async def load_dkp_chars(self):
         main_counter = 0
         char_counter = 0
 
@@ -46,7 +48,7 @@ class Dkp:
             return False
 
         self.users.clear()
-        self.items = Items()
+        self.dkp_items = Items()
 
         for player in self.raw_points['players']:
             main_name = self.raw_points['players'][player]['main_name'].lower().capitalize()
@@ -72,7 +74,7 @@ class Dkp:
             self.add_new_char(char_id, char_name, main_name)
 
             # Add Items
-            self.items.add(items, main_name)
+            self.dkp_items.add(items, main_name)
 
         # pprint(sorted(self.items.items_by_user.items(), key=lambda x: x))
 
@@ -85,14 +87,16 @@ class Dkp:
                                        'dkp': {'current': dkp_current,
                                                'spent': dkp_spent,
                                                'earned': dkp_earned},
-                                       'chars': []}})
+                                       'chars': [],
+                                       'raids': [],
+                                       'pending_raids': []}})
         return True
 
     def add_new_char(self, char_id, char_name, main_name):
         log.debug(f"EQDKP: Adding Char {char_name} to {main_name}")
         self.users[main_name]['chars'].append(DkpChar(char_id, char_name))
 
-    async def get_raids(self):
+    async def load_dkp_raids(self):
         if await self.load_remote_raids():
             self.raids_last_read = timeh.now()
             log.info("EQDKP: Remote Raids loaded")
@@ -104,6 +108,10 @@ class Dkp:
         else:
             log.info("EQDKP: Error on loading Raids")
             return False
+        self.dkp_raids = dkp_raids.Raids()
+        self.dkp_raids.load(self.raw_raids, self)
+        log.info("EQDKP: Local Raids Processed")
+
 
     async def load_remote_chars(self):
 
@@ -160,6 +168,13 @@ class Dkp:
         for user in self.users:
             for char in self.users[user]['chars']:
                 if name == char.name:
+                    return user
+        return False
+
+    def get_user_by_char_id(self, char_id):
+        for user in self.users:
+            for char in self.users[user]['chars']:
+                if char_id == char.id:
                     return user
         return False
 
@@ -220,7 +235,7 @@ class Dkp:
                    }
         xml_data = dicttoxml.dicttoxml(adj_data, custom_root='request', attr_type=False, item_func=my_item_func)
         params = {'function': 'add_adjustment', 'format': 'json', 'atoken': config.EQDKP_API_KEY, 'atype': 'api'}
-        print(xml_data)
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(config.EQDKP_API_URL, data=xml_data, params=params) as resp:
@@ -242,7 +257,7 @@ class Dkp:
 
         my_item_func = lambda x: 'member'
 
-        raid_data = {'raid_date': raid.date_creation.strftime(config.DATE_EQDKP_FORMAT),
+        raid_data = {'raid_date': raid.date.strftime(config.DATE_EQDKP_FORMAT),
                      'event_name': raid.name_id,
                      'raid_attendees':  raid.get_player_eqdkp_id_list(),
                      'raid_value': raid.points}

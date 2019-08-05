@@ -1,7 +1,7 @@
 import re
 import urllib.parse
 from datetime import datetime
-from player import Player
+from raid import Player
 
 
 class LineParser:

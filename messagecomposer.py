@@ -1,5 +1,5 @@
 from raid import Raid
-import timehandler as timeh
+
 
 def message_cut(input_text: str, limit: int):
     """
@@ -93,7 +93,7 @@ def print_dkp_char_points(points):
     return recap
 
 
-def print_dkp_char_items(items):
+def print_dkp_user_items(items):
     if not items:
         return ""
     header = "**ITEMS**"
@@ -102,4 +102,35 @@ def print_dkp_char_items(items):
         recap += f"+ {item['name']}: {item['value']}\n"
     recap = header + prettify(recap, "MD")
     return recap
+
+
+def print_dkp_user_raids(raids_by_char, chars, dkp):
+    counter = 0
+    if not raids_by_char:
+        return ""
+    header = "**LATEST RAIDS**"
+    recap = ""
+    for char in chars:
+        if str(char.id) in raids_by_char:
+            for raid in raids_by_char[str(char.id)]:
+                counter += 1
+                recap += f"+ {raid.event_name} - {raid.date.strftime('%b %d')}\n"
+                if counter == 5:
+                    break
+        if counter == 5:
+            break
+    recap = header + prettify(recap, "MD")
+    return recap
+
+
+def print_user_pending_raids(user):
+    header = "**PENDING RAIDS**"
+    recap = ""
+    for raid in user['pending_raids']:
+        recap += f"+ {raid.name_id}\n"
+    if not recap:
+        return ""
+    recap = header + prettify(recap, "MD")
+    return recap
+
 
