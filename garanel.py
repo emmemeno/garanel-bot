@@ -433,7 +433,6 @@ class Garanel:
             return False
 
         raid.log_loaded = True
-        raid.date = datetime.strptime(date, config.DATE_EQ_LOG_FORMAT)
         print(f"New Date {raid.date}")
         for player in players:
             dkp_char = self.dkp.get_char_by_name(player.name)
@@ -491,7 +490,7 @@ class Garanel:
                 await channel.send(mc.prettify(f"{player_to_remove[0].name} is not present", "YELLOW"))
                 return False
             raid.del_raid_player(player_to_remove[0])
-            await channel.send(mc.prettify(f"+ {player_to_remove[0].name} was removed from this raid", "MD"))
+            await channel.send(mc.prettify(f"- {player_to_remove[0].name} was removed from this raid", "MD"))
 
         raid.save()
 
