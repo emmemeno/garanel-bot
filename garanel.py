@@ -671,15 +671,9 @@ class Garanel:
                                                          "Use '$role bot_role discord_id'", "YELLOW"))
 
     async def reorder_raid_channels(self):
-        reversed_list = self.raid_list.copy()
-        reversed_list.reverse()
-        for i, raid in enumerate(reversed_list):
+        for i, raid in enumerate(self.raid_list):
             channel = self.client.get_channel(raid.discord_channel_id)
             await channel.edit(position=i)
-        print("REVERSED LIST")
-        print(reversed_list)
-        del reversed_list
-
 
     async def minute_digest(self):
         tic = 60
