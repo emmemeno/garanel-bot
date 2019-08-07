@@ -215,7 +215,9 @@ class Garanel:
 
         await self.dkp.load_dkp_chars()
         await self.dkp.load_dkp_raids()
-        await input_channel.send(mc.prettify(f"DKP Chars and Raids Reloaded", "YELLOW"))
+        utils.raid_autosave(self.raid_list)
+        await input_channel.send(mc.prettify(f"DKP Chars and Raids Reloaded!\n"
+                                             f"Pending Raids saved!", "YELLOW"))
 
         # Refresh the DKP status of players
         utils.refresh_dkp_status(self.raid_list, self.dkp.users)
