@@ -872,7 +872,7 @@ class Garanel:
             channel = self.client.get_channel(raid.discord_channel_id)
             try:
                 await channel.edit(position=i)
-            except TypeError:
+            except AttributeError:
                 log.error(f"Raid Channel {raid.name_id} ({raid.discord_channel_id}) N/A!")
                 pass
 
