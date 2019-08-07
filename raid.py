@@ -50,6 +50,8 @@ class Raid:
     def __init__(self,
                  name_id: str,
                  date: str,
+                 event_name: str,
+                 event_id,
                  discord_channel_id: int,
                  close: bool,
                  kill,
@@ -66,6 +68,9 @@ class Raid:
             log.error(f"RAID: Error loading Date: {e}")
             self.date = datetime.utcnow()
 
+        self.event_name = event_name
+        self.event_id = event_id
+
         self.players = players
         self.items = items
         self.discord_channel_id = discord_channel_id
@@ -75,10 +80,12 @@ class Raid:
         self.points = points
         self.log_final = log_final
         self.close = close
+        self.status_save = False
 
     def __repr__(self):
+        if self.event_name:
+            return self.event_name
         return self.name_id
-
 
     def add_raid_player(self, player: Player, dkp):
         if self.has_player_by_name(player.name):
@@ -92,6 +99,7 @@ class Raid:
                 dkp.users[user]['pending_raids'].append(self)
                 log.info(f"ADD PENDING RAID TO USER: {user}")
             self.players.sort(key=lambda x: x.name, reverse=False)
+            self.status_save = True
             return True
 
     # def add_player_by_name(self, player_name: str):
@@ -106,6 +114,7 @@ class Raid:
             if user:
                 dkp.users[user]['pending_raids'].remove(self)
                 log.info(f"REMOVE PENDING RAID TO USER: {user}")
+                self.status_save = True
             return True
         else:
             return False
@@ -113,14 +122,16 @@ class Raid:
     def add_item(self, name: str, points, winner: Player):
         if name in self.items:
             return False
-
         self.items.append({'name': name, 'points': points, 'winner': winner})
+        self.status_save = True
 
     def wipe_items(self):
         del self.items[:]
+        self.status_save = True
 
     def close(self):
         self.close = True
+        self.status_save = True
 
     def has_player(self, player: Player):
         if player in self.players:
@@ -162,7 +173,9 @@ class Raid:
                 for player in self.players:
                     if char.name == player.name:
                         # Update the player
-                        player.eqdkp_id = char.id
+                        if not player.eqdkp_id == char.id:
+                            player.eqdkp_id = char.id
+                            self.status_save = True
                         # Update the user
                         if self not in dkp_users[user]['pending_raids']:
                             dkp_users[user]['pending_raids'].append(self)
@@ -170,7 +183,6 @@ class Raid:
                     else:
                         char.eqdkp_id = False
         log.info(f"RAID SYNC: {self.name_id}: Done!")
-        self.save()
 
     def delete_pending_raids_from_user(self, dkp_users):
         log.info(f"RAID SYNC: Deleting Pending Raids from Users")
@@ -182,6 +194,11 @@ class Raid:
                         dkp_users[user]['pending_raids'].remove(self)
                         log.debug(f"RAID SYNC: Deleting {user} from pending raid")
 
+    def set_kill(self, mode):
+        self.kill = mode
+        self.status_save = True
+        return True
+
     def create_log_file(self):
         status = ""
         if self.kill is True:
@@ -190,10 +207,16 @@ class Raid:
             status = "-nokill"
 
         file_name = f"{self.name_id}{status}.txt"
-        with open(config.PATH_HISTORY+file_name, 'a') as output_file:
+        file_url = config.PATH_HISTORY+file_name
+        if os.path.isfile(file_url):
+            mode = "w"
+        else:
+            mode = "a"
+        with open(file_url, mode) as output_file:
             for char in self.players:
                 output_file.write(f"[{self.get_log_format_date()}] {char.get_log_line()}\n")
         self.log_final = file_name
+        self.status_save = True
         return file_name
 
     def serialize(self):
@@ -202,6 +225,8 @@ class Raid:
             player_list.append(char.serialize())
         return {'name_id': self.name_id,
                 'date': self.date.strftime(config.DATE_EQDKP_FORMAT),
+                'event_name': self.event_name,
+                'event_id': self.event_id,
                 'discord_channel_id': self.discord_channel_id,
                 'close': self.close,
                 'kill': self.kill,
@@ -211,6 +236,14 @@ class Raid:
                 'players': player_list,
                 'items': self.items
                 }
+
+    def autosave(self):
+        if self.status_save:
+            log.info(f"Auto-saving {self}")
+            self.save()
+            self.status_save = False
+            return True
+        return False
 
     def save(self):
         file_url = config.PATH_RAIDS + self.name_id + '.json'

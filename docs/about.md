@@ -1,4 +1,4 @@
-:robot: __Garanel Bot__ v0.25
+:robot: __Garanel Bot__ v0.3
 Programmed and maintained by Albero.
 Feel free to send me your discovered bugs, suggestions and in-game plats!
 [GitHub](https://github.com/emmemeno/garanel-bot)

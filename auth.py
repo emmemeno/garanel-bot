@@ -30,8 +30,9 @@ class Auth:
                     try:
                         if self.roles[b_role] == m_role.id:
                             return True
-                    except IndexError as e:
-                        log
+                    except KeyError:
+                        log.info(f"MYAUTH: Bot Role {b_role} not found")
+        log.info(f"MYAUTH: {bot_role} not found in {member}")
         return False
 
     def check_owner(self, discord_id):
@@ -39,3 +40,10 @@ class Auth:
             return True
         else:
             return False
+
+    def set_role(self, bot_role, discord_id):
+        if bot_role not in self.roles:
+            return False
+        self.roles[bot_role] = int(discord_id)
+        self.save_roles()
+        return True

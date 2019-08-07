@@ -1,5 +1,6 @@
 from raid import Raid
-
+import config
+import timehandler as timeh
 
 def message_cut(input_text: str, limit: int):
     """
@@ -75,6 +76,17 @@ def print_raid_items(raid: Raid):
     return output
 
 
+def print_raid_generals(raid: Raid):
+    if raid.event_name:
+        name = raid.event_name
+    else:
+        name = raid.name_id
+    date = raid.date.strftime(config.DATE_EQDKP_FORMAT)
+    time_lapsed = timeh.countdown(raid.date,timeh.now())
+    total_attendees = len(raid.players)
+    return f"{name} added at {date} UTC ({time_lapsed} ago)\n- Total Attendees: {total_attendees}"
+
+
 def print_dkp_char_list(user_name, chars):
     header = "**CHARS**"
     recap = ""
@@ -82,6 +94,8 @@ def print_dkp_char_list(user_name, chars):
         # skip discord chars
         if "#" not in char.name:
             recap += f"+ {char.name}\n"
+    if not recap:
+        recap = "Empty :("
     recap = header + prettify(recap, "MD")
     return recap
 
@@ -132,5 +146,18 @@ def print_user_pending_raids(user):
         return ""
     recap = header + prettify(recap, "MD")
     return recap
+
+def print_roles_list(bot_roles, discord_guild_roles):
+    bot_roles_list = ""
+    for bot_role in bot_roles:
+        bot_roles_list += f"+ {bot_role} = {bot_roles[bot_role]}\n"
+    bot_roles_list = "**Bot Roles**\n" + prettify(bot_roles_list, "MD")
+
+    discord_roles_list = ""
+    for discord_role in discord_guild_roles:
+        discord_roles_list += f"+ {discord_role.name} = {discord_role.id}\n"
+    discord_roles_list = "**Discord Roles**\n" + prettify(discord_roles_list, "MD")
+    return bot_roles_list + discord_roles_list
+
 
 

@@ -61,7 +61,7 @@ class Dkp:
             dkp_spent = int(round(float(dkp_spent)))
             dkp_earned = self.raw_points['players'][player]['points']['multidkp_points:1']['points_earned_with_twink']
             dkp_earned = int(round(float(dkp_earned)))
-            items = self.raw_points['players'][player]['items']
+            user_items = self.raw_points['players'][player]['items']
 
             # If there is no user, create it!
             if main_name not in self.users:
@@ -74,7 +74,7 @@ class Dkp:
             self.add_new_char(char_id, char_name, main_name)
 
             # Add Items
-            self.dkp_items.add(items, main_name)
+            self.dkp_items.add(user_items, main_name)
 
         # pprint(sorted(self.items.items_by_user.items(), key=lambda x: x))
 

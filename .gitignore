@@ -1,5 +1,6 @@
 .idea/
 __pycache__
+history/
 logs/garanel.log
 resources/
 config.py

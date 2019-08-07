@@ -31,8 +31,17 @@ def load_raids(path):
                                       char['eqdkp_id']))
         for item in raid['items']:
             item_list.append(item)
+        # TODO: delete after first json save
+        event_name = event_id = None
+        if 'event_name' in raid:
+            event_name = raid['event_name']
+        if 'event_id' in raid:
+            event_id = raid['event_id']
+
         raid_list.append(Raid(raid['name_id'],
                               raid['date'],
+                              event_name,
+                              event_id,
                               raid['discord_channel_id'],
                               raid['close'],
                               raid['kill'],
@@ -44,7 +53,7 @@ def load_raids(path):
                               ))
         log.debug(f"Raid Loaded: {raid['name_id']}")
     # Sort by date creation
-    raid_list.sort(key=lambda x: x.name_id)
+    raid_list.sort(key=lambda x: x.date, reverse=True)
     return raid_list
 
 
@@ -98,6 +107,16 @@ def update_raid_attendees_dkp_status(raid_list, dkp):
                 log.debug(f"EQDKP Player updated: {player.name} in {raid.name_id}")
 
     return updated_players
+
+
+def refresh_dkp_status(raid_list, dkp_users):
+    for raid in raid_list:
+        raid.refresh_dkp_status(dkp_users)
+
+
+def raid_autosave(raid_list):
+    for raid in raid_list:
+        raid.autosave()
 
 
 def remove_json_raid(raid: Raid):
