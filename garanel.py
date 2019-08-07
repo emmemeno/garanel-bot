@@ -109,7 +109,10 @@ class Garanel:
     # GET HELP
     ####
     async def cmd_help(self):
-        await self.input_author.send(self.help.get_help(self.input_params["help_command"]))
+        cmd = ""
+        if "help_command" in self.input_params:
+            cmd = self.input_params["help_command"]
+        await self.input_author.send(self.help.get_help(cmd))
 
     ####
     # GET DKP
