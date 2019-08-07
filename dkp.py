@@ -41,7 +41,7 @@ class Dkp:
             self.save_local_chars()
             log.info("EQDKP: Saved Points locally.")
         elif self.load_local_chars():
-            self.points_last_read = datetime.datetime.fromtimestamp(os.path.getmtime(config.LOCAL_EQDK_POINTS))
+            self.points_last_read = datetime.datetime.fromtimestamp(os.path.getmtime(config.LOCAL_DKP_POINTS))
             log.info("EQDKP: Local Points loaded")
         else:
             log.info("EQDKP: Error on loading Points")
@@ -103,7 +103,7 @@ class Dkp:
             self.save_local_raids()
             log.info("EQDKP: Saved Raids locally.")
         elif self.load_local_raids():
-            self.raids_last_read = datetime.datetime.fromtimestamp(os.path.getmtime(config.LOCAL_EQDK_POINTS))
+            self.raids_last_read = datetime.datetime.fromtimestamp(os.path.getmtime(config.LOCAL_DKP_RAIDS))
             log.info("EQDKP: Local Raids loaded")
         else:
             log.info("EQDKP: Error on loading Raids")
@@ -124,14 +124,14 @@ class Dkp:
 
     def load_local_chars(self):
         log.info("EQDKP: Loading Local Points file...")
-        self.raw_points = utils.load_local_json(config.LOCAL_EQDK_POINTS)
+        self.raw_points = utils.load_local_json(config.LOCAL_DKP_POINTS)
         if self.raw_points:
             return True
         return False
 
     def save_local_chars(self):
         log.info("EQDKP: Saving Remote Points file locally...")
-        if utils.save_local_json(config.LOCAL_EQDK_POINTS, self.raw_points):
+        if utils.save_local_json(config.LOCAL_DKP_POINTS, self.raw_points):
             return True
         return False
 
@@ -146,14 +146,14 @@ class Dkp:
 
     def load_local_raids(self):
         log.info("EQDKP: Loading Local Raids file...")
-        self.raw_raids = utils.load_local_json(config.LOCAL_EQDK_RAIDS)
+        self.raw_raids = utils.load_local_json(config.LOCAL_DKP_RAIDS)
         if self.raw_points:
             return True
         return False
 
     def save_local_raids(self):
         log.info("EQDKP: Saving Remote Raids file locally...")
-        if utils.save_local_json(config.LOCAL_EQDK_RAIDS, self.raw_raids):
+        if utils.save_local_json(config.LOCAL_DKP_RAIDS, self.raw_raids):
             return True
         return False
 

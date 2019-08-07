@@ -291,7 +291,6 @@ class Garanel:
 
         user = self.dkp.get_user_by_char_name(discord_user_name)
 
-
         if not user:
             await input_channel.send(mc.prettify(f"Char {discord_user_name} not found", "YELLOW"))
             return False
@@ -871,7 +870,11 @@ class Garanel:
     async def reorder_raid_channels(self):
         for i, raid in enumerate(self.raid_list):
             channel = self.client.get_channel(raid.discord_channel_id)
-            await channel.edit(position=i)
+            try:
+                await channel.edit(position=i)
+            except TypeError:
+                log.error(f"Raid Channel {raid.name_id} ({raid.discord_channel_id}) N/A!")
+                pass
 
     async def minute_digest(self):
         tic = 60
