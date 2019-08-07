@@ -22,6 +22,9 @@ class Auth:
             return True
 
     def check(self, bot_role, member: discord.Member):
+        if self.check_owner(member.id):
+            return True
+
         roles_to_check = bot_role.split(":")
         # If input is done privately dont do anything
         if type(member).__name__ == "Member":
