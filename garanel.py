@@ -275,7 +275,7 @@ class Garanel:
     # ADD CHAR
     ####
     async def cmd_dkp_char_add(self):
-        if not self.my_auth.check("officer", self.input_author):
+        if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
         input_author = self.input_author
