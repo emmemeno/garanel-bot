@@ -14,6 +14,9 @@ class Player:
         self.afk = afk
         self.eqdkp_id = eqdkp
 
+    def __repr__(self):
+        return f"OBJ Player: {self.name}"
+
     def get_log_line(self):
         output = ""
 

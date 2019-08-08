@@ -63,7 +63,7 @@ class LineParser:
         return False
 
     def is_action(self, action):
-        if action in self.result['action']:
+        if action == self.result['action']:
             return True
         return False
 
@@ -181,32 +181,27 @@ class LineParser:
 
     def parse_log(self):
         self.line = "[" + self.line
-        print(self.line)
         lines = self.line.split('\n')
         players = []
         for line in lines:
             reg = re.search(r"\[(.*?)\]\s*(AFK)?(\<LINKDEAD\>)?\[(.*?)\] (\w+) (\(.*?\))?", line)
             if reg:
-                print(reg.groups())
-                try:
-                    afk = False
-                    anon = False
-                    lvl = role = race = None
-                    if reg.group(3).upper() == "ANONYMOUS":
-                        anon = True
-                    else:
-                        if reg.group(3):
-                            details = reg.group(3).split(" ")
-                            lvl = int(details[0])
-                            role = details[1]
-                        if reg.group(5):
-                            race = reg.group(5)[1:-1]
-                    if reg.group(2):
-                        afk = True
-
-                    players.append(Player(reg.group(4), anon, lvl, role, race, afk))
-                except IndexError as e:
-                    log.error(f"LOG PARSING: Error parsing line: {reg.group(0)} - Error: {e}")
+                afk = False
+                anon = False
+                lvl = role = race = None
+                if reg.group(4).upper() == "ANONYMOUS":
+                    anon = True
+                else:
+                    try:
+                        details = reg.group(4).split(" ")
+                        lvl = int(details[0])
+                        role = details[1]
+                        race = reg.group(6)[1:-1]
+                    except Exception as e:
+                        log.error(f"LOG_PARSER: ERROR!!! {e}")
+                if reg.group(2):
+                    afk = True
+                players.append(Player(reg.group(5), anon, lvl, role, race, afk))
 
         self.set_param('players_to_add', players)
 
