@@ -193,9 +193,7 @@ class Garanel:
         except Exception as e:
             await input_channel.send(mc.prettify("Missing parameter", "YELLOW"))
             return False
-        print(f"Iteam Search: {item_search}")
         fuzz_results = fuzz_process.extract(item_search, self.dkp.dkp_items.items_list, limit=5)
-        print(fuzz_results)
         items_recap = ""
         items_title_recap = ""
         entries_recap = ""
