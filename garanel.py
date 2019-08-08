@@ -197,18 +197,24 @@ class Garanel:
         items_recap = ""
         items_title_recap = ""
         entries_recap = ""
+
         for result in fuzz_results:
             if result[1] >= 90:
+
                 total_spent = 0
                 items_title_recap = result[0]
                 items_title_recap = f"**{items_title_recap}**"
                 entries = self.dkp.dkp_items.items_dict[result[0]]
+                counter = 0
                 for entry in entries:
+                    counter += 1
                     total_spent += entry['value']
                     entries_recap += f"+ { entry['winner']}: {entry['value']}\n"
 
-                items_recap += items_title_recap + mc.prettify(entries_recap + f"\nTotal spent: {total_spent}", "MD")
+                items_recap += items_title_recap + mc.prettify(entries_recap +
+                                                               f"\nAverage Price: {int(round(total_spent/counter))}", "MD")
                 entries_recap = ""
+
 
         if not items_recap:
             if fuzz_results[0][1] > 80:
