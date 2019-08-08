@@ -1,7 +1,9 @@
 import re
 import urllib.parse
 from raid import Player
+import logging
 
+log = logging.getLogger("Garanel")
 
 class LineParser:
 
@@ -183,22 +185,28 @@ class LineParser:
         lines = self.line.split('\n')
         players = []
         for line in lines:
-            reg = re.search(r"\[(.*?)\]\s*(AFK)? \[(.*?)\] (\w+) (\(.*?\))? <Riot>", line)
+            reg = re.search(r"\[(.*?)\]\s*(AFK)?(\<LINKDEAD\>)?\[(.*?)\] (\w+) (\(.*?\))?", line)
             if reg:
-                afk = False
-                anon = False
-                lvl = role = race = None
-                if reg.group(3).upper() == "ANONYMOUS":
-                    anon = True
-                else:
-                    details = reg.group(3).split(" ")
-                    lvl = int(details[0])
-                    role = details[1]
-                    race = reg.group(5)[1:-1]
-                if reg.group(2):
-                    afk = True
+                print(reg.groups())
+                try:
+                    afk = False
+                    anon = False
+                    lvl = role = race = None
+                    if reg.group(3).upper() == "ANONYMOUS":
+                        anon = True
+                    else:
+                        if reg.group(3):
+                            details = reg.group(3).split(" ")
+                            lvl = int(details[0])
+                            role = details[1]
+                        if reg.group(5):
+                            race = reg.group(5)[1:-1]
+                    if reg.group(2):
+                        afk = True
 
-                players.append(Player(reg.group(4), anon, lvl, role, race, afk))
+                    players.append(Player(reg.group(4), anon, lvl, role, race, afk))
+                except IndexError as e:
+                    log.error(f"LOG PARSING: Error parsing line: {reg.group(0)} - Error: {e}")
 
         self.set_param('players_to_add', players)
 
