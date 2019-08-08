@@ -5,8 +5,8 @@
 ```
   [$about]        - About Garanel Bot
   [$help]         - Show this help
-  [$dkp]          - Get full information of a char
   [$who}          - Get chars family and DKP points
+  [$item}         - Get item history
   [$sync]         - Reload All Chars and DKP*
   [$raid-add]     - Add a Raid
   [$mainchar-add] - Add a Main Character*
@@ -33,6 +33,6 @@ _* Officer only command_
 
 More help for commands:
 ```
- $help dkp
+ $help who
  $help item-add
 ```

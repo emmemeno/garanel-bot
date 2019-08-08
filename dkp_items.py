@@ -10,6 +10,7 @@ class Item:
 class Items:
 
     def __init__(self):
+        self.items_list = []
         self.items_dict = {}
         self.items_by_points = {}
         self.items_by_user = {}
@@ -18,14 +19,16 @@ class Items:
 
         if len(eqdkp_dict):
             for entry in eqdkp_dict:
-                item_name = unescape(eqdkp_dict[entry]['name'])
+                item_name = unescape(eqdkp_dict[entry]['name'].strip())
                 item_value = eqdkp_dict[entry]['value']
 
                 item = {'winner': winner, "value": item_value}
-                # Add to main Dict
+                # Add to main Dict and List
                 if item_name not in self.items_dict:
+                    self.items_list.append(item_name)
                     self.items_dict[item_name] = []
                 self.items_dict[item_name].append(item)
+                self.items_dict[item_name].sort(key=lambda i: i['value'], reverse=True)
 
                 # Add to dict by points
                 if eqdkp_dict[entry]['value'] not in self.items_by_points:

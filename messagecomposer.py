@@ -1,6 +1,7 @@
 from raid import Raid
 import config
 import timehandler as timeh
+import re
 
 def message_cut(input_text: str, limit: int):
     """
@@ -141,7 +142,7 @@ def print_user_pending_raids(user):
     header = "**PENDING RAIDS**"
     recap = ""
     for raid in user['pending_raids']:
-        recap += f"+ {raid.name_id}\n"
+        recap += f"+ {raid}\n"
     if not recap:
         return ""
     recap = header + prettify(recap, "MD")
@@ -158,6 +159,13 @@ def print_roles_list(bot_roles, discord_guild_roles):
         discord_roles_list += f"+ {discord_role.name} = {discord_role.id}\n"
     discord_roles_list = "**Discord Roles**\n" + prettify(discord_roles_list, "MD")
     return bot_roles_list + discord_roles_list
+
+
+def username_prettify(name):
+    reg = re.search(r"(#\d{4})\b", name)
+    if reg:
+        return name[0:reg.start()]
+    return name
 
 
 

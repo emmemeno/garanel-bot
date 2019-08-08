@@ -9,6 +9,7 @@ verify_ssl = true
 discord-py = "*"
 pytz = "*"
 dicttoxml = "*"
+fuzzywuzzy = "*"
 
 [requires]
 python_version = "3.6"

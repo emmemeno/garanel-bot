@@ -5,6 +5,8 @@ import aiohttp
 import json
 from raid import Raid
 from raid import Player
+from discord import File
+import messagecomposer as mc
 import logging
 
 log = logging.getLogger("Garanel")
@@ -58,7 +60,9 @@ def load_raids(path):
 
 
 def get_raid_by_name_id(raid_list, name_id):
+
     for raid in raid_list:
+
         if raid.name_id == name_id:
             return raid
     return False
@@ -119,15 +123,53 @@ def raid_autosave(raid_list):
         raid.autosave()
 
 
+async def raid_archive(raid: Raid, raid_list, dkp_users, history_channel):
+
+    if len(raid.get_players()) > 6:
+        if not raid.log_final:
+            raid.create_log_file()
+        # Send the Log File
+        await history_channel.send(file=File(config.PATH_HISTORY + raid.log_final))
+        # Send the Item list
+        items = mc.print_raid_items(raid)
+        if items:
+            await history_channel.send(mc.prettify(items, "MD"))
+        await history_channel.send(mc.prettify(f"Total Attendees: {len(raid.players)}", "BLUE"))
+
+    # Remove the raid
+    remove_raid(raid, raid_list)
+    log.info(f"ARCHIVE: Raid {raid.name_id} done.")
+    # Remove pending players from raid
+    raid.delete_pending_raids_from_user(dkp_users)
+
+
+def remove_raid(raid: Raid, raid_list):
+        log.info(f"RAID: REMOVING {raid.name_id}")
+        remove_json_raid(raid)
+        if raid.log_final:
+            remove_log_raid(raid)
+        try:
+            raid_list.remove(raid)
+        except Exception as e:
+            log.error(f"RAID: RAID {raid.name_id} was not on raid_list")
+
+
 def remove_json_raid(raid: Raid):
     file_url = config.PATH_RAIDS + raid.name_id + ".json"
-    os.remove(file_url)
-    log.debug(f"{file_url} REMOVED")
+    try:
+        os.remove(file_url)
+        log.info(f"FILE: {file_url} REMOVED")
+    except FileNotFoundError:
+        log.error(f"FILE: {file_url} NOT FOUND")
+
 
 def remove_log_raid(raid: Raid):
     file_url = config.PATH_HISTORY + raid.log_final
-    os.remove(file_url)
-    log.debug(f"{file_url} REMOVED")
+    try:
+        os.remove(file_url)
+        log.info(f"{file_url} REMOVED")
+    except FileNotFoundError:
+        log.error(f"FILE: {file_url} NOT FOUND")
 
 
 def check_if_channel(raid: Raid, client):

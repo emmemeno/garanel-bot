@@ -14,6 +14,8 @@ import dkp
 import timehandler as timeh
 import helper
 from datetime import datetime
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process as fuzz_process
 from pprint import pprint
 
 
@@ -65,6 +67,7 @@ class Garanel:
         self.client.loop.create_task(self.eqdkp_sync())
         self.client.event(self.on_ready)
         self.client.event(self.on_message)
+        self.client.event(self.on_guild_channel_delete)
         self.client.run(config.DISCORD_TOKEN)
 
     async def on_ready(self):
@@ -72,7 +75,16 @@ class Garanel:
         self.connected = True
         self.guild = self.client.get_guild(config.GUILD_ID)
         self.my_auth.load_roles(config.ROLES_FILE)
+        await self.clean_if_deleted_channel()
         await self.reorder_raid_channels()
+
+    async def on_guild_channel_delete(self, channel):
+        raid = utils.get_raid_by_channel_input_id(self.raid_list, channel.id)
+        if not raid:
+            return False
+        history_channel = self.client.get_channel(config.HISTORY_CHANNEL_ID)
+        await utils.raid_archive(raid, self.raid_list, self.dkp.users, history_channel)
+        await self.clean_if_deleted_channel(channel.id)
 
     async def on_message(self, msg):
         # Assign temporary variables
@@ -89,9 +101,13 @@ class Garanel:
             log.debug(f"INPUT: {str(self.input_author)} - {msg.content}")
 
         action = lp.get_action()
-        if action:
-            self.input_params = lp.get_params()
+        if not action:
+            return False
+        self.input_params = lp.get_params()
+        try:
             await self.call_function(action)
+        except Exception as e:
+            log.error(f"INPUT ERROR: {e}", exc_info=True)
 
         # Clear temporary variables
         self.auth = False
@@ -115,60 +131,6 @@ class Garanel:
         await self.input_author.send(self.help.get_help(cmd))
 
     ####
-    # GET DKP
-    ####
-    async def cmd_dkp(self):
-        # if not self.my_auth.check("member:applicant", self.input_author):
-        #     return False
-        # Can't use this command on raid channels
-
-        input_author = self.input_author
-        input_channel = self.input_channel
-        input_params = self.input_params
-
-        if utils.get_raid_by_channel_input_id(self.raid_list, input_channel.id):
-            return False
-
-        if not self.dkp.points_last_read:
-            await input_channel.send(mc.prettify("DKP website was unreachable, no data available", "MD"))
-            return False
-
-        try:
-            dkp_target = input_params['dkp_target']
-        except KeyError:
-            dkp_target = None
-            pass
-
-        if dkp_target:
-            user_name = self.dkp.get_user_by_char_name(dkp_target)
-            find_name = dkp_target
-        else:
-            user_name = str(input_author).capitalize()
-            find_name = user_name
-
-        user = self.dkp.get_user_by_name(user_name)
-
-        if not user:
-            await input_channel.send(mc.prettify(f"+ {find_name} not found", "MD"))
-            return False
-
-        points = self.dkp.get_points_by_user_name(user_name)
-        chars = self.dkp.get_chars_by_user_name(user_name)
-
-        if not chars:
-            await input_channel.send(mc.prettify(f"+ {find_name} has no characters", "MD"))
-
-        chars_recap = mc.print_dkp_char_list(user_name, chars)
-        dkp_recap = mc.print_dkp_char_points(points)
-        items_recap = mc.print_dkp_user_items(self.dkp.dkp_items.get_items_by_user(user_name))
-
-        raids_recap = mc.print_dkp_user_raids(self.dkp.dkp_raids.raids_by_user_id, chars, self.dkp)
-        pending_raids_recap = mc.print_user_pending_raids(user)
-        recap = chars_recap + dkp_recap + items_recap + raids_recap + pending_raids_recap + \
-                f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
-        await input_author.send(recap)
-
-    ####
     # WHO
     ####
     async def cmd_who(self):
@@ -185,8 +147,7 @@ class Garanel:
         try:
             who = input_params['who']
         except KeyError:
-            await input_channel.send(mc.prettify("Missing char name", "YELLOW"))
-            return False
+            who = str(input_author)
 
         user = self.dkp.get_user_by_char_name(who)
 
@@ -199,12 +160,66 @@ class Garanel:
 
         if not chars:
             await input_channel.send(mc.prettify(f"+ {who} has no characters", "MD"))
-        dkp_recap = mc.print_dkp_char_points(points)
 
+        dkp_recap = mc.print_dkp_char_points(points)
+        items_recap = mc.print_dkp_user_items(self.dkp.dkp_items.get_items_by_user(user))
         chars_recap = mc.print_dkp_char_list(user, chars)
 
-        recap = chars_recap + dkp_recap + f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
-        await input_channel.send(recap)
+        if 'info' in input_params:
+            raids_recap = mc.print_dkp_user_raids(self.dkp.dkp_raids.raids_by_user_id, chars, self.dkp)
+            pending_raids_recap = mc.print_user_pending_raids(self.dkp.users[user])
+        else:
+            raids_recap = pending_raids_recap = ""
+
+        recap = chars_recap + dkp_recap + items_recap + raids_recap + pending_raids_recap + \
+                f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
+        if 'info' in input_params:
+            await input_author.send(recap)
+        else:
+            await input_channel.send(recap)
+
+    ####
+    # ITEM
+    ####
+    async def cmd_item(self):
+        input_author = self.input_author
+        input_channel = self.input_channel
+        input_params = self.input_params
+        try:
+            item_search = input_params['item_name']
+            if len(item_search) < 5:
+                await input_channel.send(mc.prettify("Wrong item name (too short)", "YELLOW"))
+                return False
+        except Exception as e:
+            await input_channel.send(mc.prettify("Missing parameter", "YELLOW"))
+            return False
+        print(f"Iteam Search: {item_search}")
+        fuzz_results = fuzz_process.extract(item_search, self.dkp.dkp_items.items_list, limit=5)
+        print(fuzz_results)
+        items_recap = ""
+        items_title_recap = ""
+        entries_recap = ""
+        for result in fuzz_results:
+            if result[1] >= 90:
+                total_spent = 0
+                items_title_recap = result[0]
+                items_title_recap = f"**{items_title_recap}**"
+                entries = self.dkp.dkp_items.items_dict[result[0]]
+                for entry in entries:
+                    total_spent += entry['value']
+                    entries_recap += f"+ { entry['winner']}: {entry['value']}\n"
+
+                items_recap += items_title_recap + mc.prettify(entries_recap + f"\nTotal spent: {total_spent}", "MD")
+                entries_recap = ""
+
+        if not items_recap:
+            if fuzz_results[0][1] > 80:
+                await input_channel.send(mc.prettify(f"Item not found. Did you mean {fuzz_results[0][0]}?", "YELLOW"))
+                return False
+            await input_channel.send(mc.prettify("Item not found", "YELLOW"))
+            return False
+        await input_channel.send(items_recap)
+
 
     ####
     # DKP RELOAD
@@ -363,18 +378,20 @@ class Garanel:
 
         try:
             event_name = input_params['event_name']
-
         except KeyError:
             event_name = raid_name
             pass
+
+        name_id = raid_name + '_' + timeh.now().strftime("%b-%d-%H%p")
         event_id = 1
-        check_raid = utils.get_raid_by_name_id(self.raid_list, raid_name)
+        check_raid = utils.get_raid_by_name_id(self.raid_list, name_id)
 
         if check_raid:
-            await input_channel.send(mc.prettify(f"Raid already present!", "YELLOW") + f"<#{check_raid.discord_channel_id}>")
+            await input_channel.send(mc.prettify(f"Raid already present!", "YELLOW") +
+                                                 f"<#{check_raid.discord_channel_id}>")
             return False
 
-        name_id = raid_name + '-' + timeh.now().strftime("%b_%d")
+
         # Create a Discord Channel First
         category = self.guild.get_channel(config.RAID_CATEGORY_ID)
         raid_channel = await self.guild.create_text_channel(f"{name_id}-new", category=category)
@@ -495,28 +512,8 @@ class Garanel:
             await input_channel.send(mc.prettify("Close the raid with $raid-close before archiving it", "MD"))
             return False
 
+        # Deleting Channel will trigger on_guild_channel_delete()
         await input_channel.delete(reason="Done!")
-        history_channel = self.client.get_channel(config.HISTORY_CHANNEL_ID)
-
-        if not raid.log_final:
-            raid.create_log_file()
-        # Send the Log File
-        await history_channel.send(file=File(config.PATH_HISTORY + raid.log_final))
-        # Send the Item list
-        items = mc.print_raid_items(raid)
-        if items:
-            await history_channel.send(mc.prettify(items, "MD"))
-        await history_channel.send(mc.prettify(f"Total Attendees: {len(raid.players)}", "BLUE"))
-
-        # Delete the Channel
-
-        # Remove the raid
-        utils.remove_json_raid(raid)
-        utils.remove_log_raid(raid)
-        log.info(f"Raid {raid.name_id} was archived. Log file: {raid.log_final}")
-        # Remove pending players from raid
-        raid.delete_pending_raids_from_user(self.dkp.users)
-        self.raid_list.remove(raid)
 
     ####
     # SEND A RAID TO EQDKP
@@ -542,7 +539,6 @@ class Garanel:
     # ADD A LOG
     ####
     async def cmd_raid_add_log(self):
-        print(self.input_params)
         if not self.my_auth.check("member:applicant", self.input_author):
             return False
 
@@ -700,7 +696,7 @@ class Garanel:
         if not raid or raid.close:
             return False
 
-        new_channel_name = f"{raid.name_id}-kill"
+        new_channel_name = f"{raid.name_id}_kill"
         await input_channel.edit(name=new_channel_name)
         raid.set_kill(True)
         await input_channel.send(mc.prettify(":)!", "YELLOW"))
@@ -720,7 +716,7 @@ class Garanel:
         if not raid or raid.close:
             return False
 
-        new_channel_name = f"{raid.name_id}-nokill"
+        new_channel_name = f"{raid.name_id}_nokill"
         await input_channel.edit(name=new_channel_name)
         raid.set_kill(False)
         await input_channel.send(mc.prettify(":(!", "YELLOW"))
@@ -842,28 +838,35 @@ class Garanel:
         else:
             await input_author.send(mc.prettify("Bot Role not found", "YELLOW"))
 
-    async def clean_if_deleted_channel(self):
+    async def clean_if_deleted_channel(self, channel_id=None):
         history_channel = self.client.get_channel(config.HISTORY_CHANNEL_ID)
 
+        # If param is pass, clean only the related channel
+        if channel_id:
+            raid = utils.get_raid_by_channel_input_id(self.raid_list, channel_id)
+            if not raid or raid.close:
+                return False
+            utils.remove_raid(raid, self.raid_list)
+
+        # If not loop through all raids
         for raid in self.raid_list:
             # Works only on raid without channels
             if not utils.check_if_channel(raid, self.client):
                 # If raid was empty, just delete it
                 if len(raid.players) == 0:
-                    utils.remove_json_raid(raid)
-                    self.raid_list.remove(raid)
-                    log.info(f"CLEAN: Empty {raid.name_id} was deleted")
+                    log.info(f"CLEANING: Empty {raid.name_id}...")
+                    utils.remove_raid(raid, self.raid_list)
                 # else create the log file, send stats to history channel and clean
                 else:
-                    log.info(f"CLEAN: Creating Log file for {raid.name_id}...")
-                    raid.create_log_file()
+                    log.info(f"CLEANING: {raid.name_id}...")
+                    if not raid.log_final:
+                        log.info(f"CLEAN: Creating a log file for {raid.name_id}...")
+                        raid.create_log_file()
                     final_items = mc.print_raid_items(raid)
                     await history_channel.send(file=File(config.PATH_HISTORY + raid.log_final))
                     if final_items:
                         await history_channel.send(mc.prettify(final_items, "MD"))
-                    utils.remove_json_raid(raid)
-                    utils.remove_log_raid(raid)
-                    self.raid_list.remove(raid)
+                    utils.remove_raid(raid, self.raid_list)
 
                     log.info(f"CLEAN: Raid {raid.name_id} was archived. Log file: {raid.log_final}")
 
@@ -880,20 +883,25 @@ class Garanel:
         tic = 60
         while True:
             await asyncio.sleep(tic)
-            utils.raid_autosave(self.raid_list)
-            await self.clean_if_deleted_channel()
+            try:
+                utils.raid_autosave(self.raid_list)
+            except Exception as e:
+                log.error(f"MINUTE DIGEST ERROR: {e}", exc_info=True)
 
     # Coroutine to sync with eqdkp website
     async def eqdkp_sync(self):
         tic = 60*60
         while True:
-            if self.connected:
-                await self.reorder_raid_channels()
-            await self.dkp.load_dkp_chars()
-            await asyncio.sleep(10)
-            await self.dkp.load_dkp_raids()
-            # Refresh the DKP status of players
-            utils.refresh_dkp_status(self.raid_list, self.dkp.users)
+            try:
+                if self.connected:
+                    await self.clean_if_deleted_channel()
+                    await self.reorder_raid_channels()
+                await self.dkp.load_dkp_chars()
+                await self.dkp.load_dkp_raids()
+                # Refresh the DKP status of players
+                utils.refresh_dkp_status(self.raid_list, self.dkp.users)
+            except Exception as e:
+                log.error(f"HOUR DIGEST ERROR: {e}", exc_info=True)
 
             await asyncio.sleep(tic)
 
