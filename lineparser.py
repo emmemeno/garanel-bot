@@ -5,6 +5,7 @@ import logging
 
 log = logging.getLogger("Garanel")
 
+
 class LineParser:
 
     def __init__(self, line: str):
@@ -90,8 +91,8 @@ class LineParser:
             return reg.group(2)
         return ""
 
-    def parse_squares(self):
-        reg = re.search(r"([\(](.*?)[\)])", self.line)
+    def parse_square_brackets(self):
+        reg = re.search(r"([\[](.*?)[\]])", self.line)
         if reg:
             self.consume_line(reg.group(1))
             return reg.group(2)
@@ -128,7 +129,7 @@ class LineParser:
             self.set_param("item_name", self.line)
 
         if self.is_action('raid_add'):
-            self.set_param("event_name", self.parse_squares())
+            self.set_param("event_name", self.parse_square_brackets())
             self.set_param("raid_name", self.low_line)
 
         if self.is_action('raid_add_log'):
@@ -160,18 +161,23 @@ class LineParser:
             self.set_param('main_char', self.parse_first_word().capitalize())
 
         if self.is_action('dkp_char_add'):
+            self.set_param("mainchar", self.parse_square_brackets())
             self.set_param('char', self.parse_first_word().capitalize())
 
         if self.is_action('dkp_adjust'):
-            reg = re.search(r"([A-Za-z#]+[0-9]{4,4}\b) (\+|-)?([0-9]{1,3}) ['\"](.*?)['\"]", self.line)
+            self.set_param('reason', self.parse_square_brackets())
+
+            reg = re.search(r"\s+(\+|-)?([0-9]{1,3})", self.line)
             if reg:
-                self.set_param('user', reg.group(1).capitalize())
-                if not reg.group(2):
+                # Find Points
+                if not reg.group(1):
                     sign = "+"
                 else:
-                    sign = reg.group(2)
-                self.set_param('points', float(sign + reg.group(3)))
-                self.set_param('reason', reg.group(4))
+                    sign = reg.group(1)
+                self.set_param('points', float(sign + reg.group(2)))
+                self.consume_line(reg.group(0))
+
+                self.set_param('char', self.line)
 
         if self.is_action('roles'):
             self.set_param('bot_role', self.parse_first_word())

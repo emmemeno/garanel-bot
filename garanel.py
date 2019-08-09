@@ -250,17 +250,30 @@ class Garanel:
     async def cmd_dkp_adjust(self):
         if not self.my_auth.check("officer", self.input_author):
             return False
-        # if not user_name:
-        #     await self.input_channel.send(mc.prettify(f"Syntax error. Please Type $help $dkp-adj", "YELLOW"))
-        #     return False
-        #
-        # user = self.dkp.get_user_by_name(user_name)
-        # if not user:
-        #     await self.input_channel.send(mc.prettify(f"Error: Char not found", "YELLOW"))
-        #     return False
-        # await self.dkp.add_adjustment(user['user_id'], points, reason)
-        # user['user_id'] += points
-        # await self.input_channel.send(mc.prettify(f"{user_name} earned {points} DKP = {reason}", "YELLOW"))
+        input_author = self.input_author
+        input_channel = self.input_channel
+        input_params = self.input_params
+
+        try:
+            char = input_params['char']
+            points = input_params['points']
+        except KeyError:
+            await input_channel.send(mc.prettify("Missing char name", "YELLOW"))
+            return False
+
+        if "reason" in input_params:
+            reason = input_params['reason']
+        else:
+            reason = ""
+
+        user_name = self.dkp.get_user_by_char_name(char)
+        if not user_name:
+            await self.input_channel.send(mc.prettify(f"Char not found", "YELLOW"))
+            return False
+        user = self.dkp.users[user_name]
+        await self.dkp.add_adjustment(user['user_id'], points, reason)
+        user['dkp']['current'] += int(points)
+        await self.input_channel.send(mc.prettify(f"{user_name} earned {points} DKP = {reason}", "YELLOW"))
 
     ####
     # ADD MAIN CHAR
@@ -301,7 +314,15 @@ class Garanel:
         input_channel = self.input_channel
         input_params = self.input_params
 
-        discord_user_name = str(self.input_author)
+        if input_params['mainchar']:
+            if not self.my_auth.check("officer", self.input_author):
+                await input_channel.send(mc.prettify(f"You need officer role to add a char to a different main char", "YELLOW"))
+                return False
+            else:
+                discord_user_name = input_params['mainchar']
+        else:
+            discord_user_name = str(self.input_author)
+
         try:
             char = input_params['char']
         except KeyError:
@@ -317,8 +338,10 @@ class Garanel:
         user_id = await self.dkp.add_remote_char(char, self.dkp.users[user]['user_id'])
         if not user_id:
             await input_channel.send( mc.prettify(f"Failed to add {char}: {self.dkp.last_rest_error}", "YELLOW"))
+            return False
 
-        self.dkp.add_new_char(user_id, char, discord_user_name)
+        self.dkp.add_new_char(user_id, user, discord_user_name)
+
         await input_channel.send(mc.prettify(f"{char} added to {discord_user_name}", "YELLOW"))
 
         # Refresh Chars in raids
@@ -394,7 +417,6 @@ class Garanel:
             await input_channel.send(mc.prettify(f"Raid already present!", "YELLOW") +
                                                  f"<#{check_raid.discord_channel_id}>")
             return False
-
 
         # Create a Discord Channel First
         category = self.guild.get_channel(config.RAID_CATEGORY_ID)

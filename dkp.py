@@ -94,7 +94,11 @@ class Dkp:
 
     def add_new_char(self, char_id, char_name, main_name):
         log.debug(f"EQDKP: Adding Char {char_name} to {main_name}")
-        self.users[main_name]['chars'].append(DkpChar(char_id, char_name))
+        try:
+            self.users[main_name]['chars'].append(DkpChar(char_id, char_name))
+            return True
+        except KeyError:
+            return False
 
     async def load_dkp_raids(self):
         if await self.load_remote_raids():
@@ -234,6 +238,7 @@ class Dkp:
                     'adjustment_reason': reason
                    }
         xml_data = dicttoxml.dicttoxml(adj_data, custom_root='request', attr_type=False, item_func=my_item_func)
+        log.debug(f"DKP ADJ: {xml_data}")
         params = {'function': 'add_adjustment', 'format': 'json', 'atoken': config.EQDKP_API_KEY, 'atype': 'api'}
 
         try:
@@ -251,7 +256,6 @@ class Dkp:
             log.error(f"ADD_REMOTE__ADJ: Error on Sending data to {config.EQDKP_API_URL}: {exc}")
             self.last_rest_error = f"ADD_REMOTE__ADJ: Error on Sending data to {config.EQDKP_API_URL}: {exc}"
             return False
-
 
     async def add_raid(self, raid: Raid):
 
