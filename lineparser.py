@@ -129,7 +129,7 @@ class LineParser:
 
         if self.is_action('raid_add'):
             self.set_param("event_name", self.parse_squares())
-            self.set_param("raid_name", self.line)
+            self.set_param("raid_name", self.low_line)
 
         if self.is_action('raid_add_log'):
             self.parse_log()
@@ -138,9 +138,9 @@ class LineParser:
             reg = re.search(r"^(([A-Za-z]+)([^A-Za-z]+)?)(on (\w+))?", self.low_line)
             if reg:
                 if reg.group(2):
-                      self.set_param('player_to_add', reg.group(2).capitalize())
+                    self.set_param('player_to_add', reg.group(2).capitalize())
                 if reg.group(5):
-                       self.set_param('player_to_remove', reg.group(5).capitalize())
+                    self.set_param('player_to_remove', reg.group(5).capitalize())
 
         if self.is_action('raid_del_player'):
             self.set_param('player_to_remove', self.parse_first_word().capitalize())

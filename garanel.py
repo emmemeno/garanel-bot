@@ -386,7 +386,7 @@ class Garanel:
             event_name = raid_name
             pass
 
-        name_id = raid_name + '_' + timeh.now().strftime("%b-%d-%H%p")
+        name_id = raid_name.replace(" ", "-") + '_' + timeh.now().strftime("%b-%d-%H%p")
         event_id = 1
         check_raid = utils.get_raid_by_name_id(self.raid_list, name_id)
 

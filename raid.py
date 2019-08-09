@@ -31,9 +31,6 @@ class Player:
 
         return output
 
-    def __repr__(self):
-        return self.name
-
     def serialize(self):
         return {"name": self.name,
                 "anon": self.anon,

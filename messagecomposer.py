@@ -142,7 +142,7 @@ def print_user_pending_raids(user):
     header = "**PENDING RAIDS**"
     recap = ""
     for raid in user['pending_raids']:
-        recap += f"+ {raid}\n"
+        recap += f"+ {raid} - {raid.date.strftime('%b %d %H:%m')}\n"
     if not recap:
         return ""
     recap = header + prettify(recap, "MD")
