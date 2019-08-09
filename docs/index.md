@@ -10,7 +10,8 @@
   [$sync]         - Reload All Chars and DKP*
   [$raid-add]     - Add a Raid
   [$mainchar-add] - Add a Main Character*
-  [$char-add]     - Add a Character to your main
+  [$char-add]     - Add a Character to eqdkp website
+  [$dkp-adj]       - Send an adjustment to eqdkp website
   
 ```
 **Commands only available in specific raid channels**
@@ -35,4 +36,6 @@ More help for commands:
 ```
  $help who
  $help item-add
+ $help char-add
+ $help dkp-adj
 ```
