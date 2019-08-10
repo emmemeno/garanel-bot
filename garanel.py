@@ -14,9 +14,9 @@ import dkp
 import timehandler as timeh
 import helper
 from datetime import datetime
-from fuzzywuzzy import fuzz
+import sys
 from fuzzywuzzy import process as fuzz_process
-from pprint import pprint
+# from pprint import pprint
 
 
 ##############
@@ -46,6 +46,8 @@ class Garanel:
         log.info("Initializing Garanel")
         log.info("####################")
         self.client = discord.Client(loop=asyncio.get_event_loop())
+        self.task_minute = None
+        self.task_hour = None
         self.raid_list = utils.load_raids(config.PATH_RAIDS)
         self.guild = None
         self.dkp = dkp.Dkp()
@@ -63,8 +65,8 @@ class Garanel:
             await fn()
 
     def run(self):
-        self.client.loop.create_task(self.minute_digest())
-        self.client.loop.create_task(self.eqdkp_sync())
+        self.task_minute = self.client.loop.create_task(self.minute_digest())
+        self.task_hour = self.client.loop.create_task(self.eqdkp_sync())
         self.client.event(self.on_ready)
         self.client.event(self.on_message)
         self.client.event(self.on_guild_channel_delete)
@@ -106,6 +108,8 @@ class Garanel:
         self.input_params = lp.get_params()
         try:
             await self.call_function(action)
+        except asyncio.CancelledError as e:
+            pass
         except Exception as e:
             log.error(f"INPUT ERROR: {e}", exc_info=True)
 
@@ -825,6 +829,9 @@ class Garanel:
 
         await input_channel.send(mc.prettify("Cleared all items", "MD"))
 
+    ####
+    # ROLES
+    ####
     async def cmd_roles(self):
         if not self.my_auth.check_owner(self.input_author.id):
             return False
@@ -858,6 +865,21 @@ class Garanel:
             await input_author.send(mc.prettify("Bot Role updated", "YELLOW"))
         else:
             await input_author.send(mc.prettify("Bot Role not found", "YELLOW"))
+
+    ####
+    # SHUTDOWN
+    ####
+    async def cmd_shutdown(self):
+        if not self.my_auth.check_owner(self.input_author.id):
+            return False
+
+        log.info("SHUTTING DOWN...")
+        input_channel = self.input_channel
+        await input_channel.send(mc.prettify("Farewell!", "YELLOW"))
+        self.task_hour.cancel()
+        self.task_minute.cancel()
+        await self.client.close()
+        sys.exit(0)
 
     async def clean_if_deleted_channel(self, channel_id=None):
         history_channel = self.client.get_channel(config.HISTORY_CHANNEL_ID)
@@ -925,6 +947,8 @@ class Garanel:
                 log.error(f"HOUR DIGEST ERROR: {e}", exc_info=True)
 
             await asyncio.sleep(tic)
+
+
 
 
 def main():

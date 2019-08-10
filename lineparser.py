@@ -36,7 +36,8 @@ class LineParser:
                              '$item': 'item',
                              '$sync': 'sync',
                              '$dkp-adj': 'dkp_adjust',
-                             '$roles': 'roles'
+                             '$roles': 'roles',
+                             '$shutdown': 'shutdown'
                              }
 
     def consume_line(self, string):
