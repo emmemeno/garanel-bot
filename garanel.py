@@ -234,14 +234,20 @@ class Garanel:
         if not self.my_auth.check("officer", self.input_author):
             return False
         input_channel = self.input_channel
-        await input_channel.send(mc.prettify(f"Please Wait...", "YELLOW"))
-        await self.dkp.load_dkp_chars()
-        await self.dkp.load_dkp_raids()
-        utils.raid_autosave(self.raid_list)
-        await input_channel.send(mc.prettify(f"Done!", "YELLOW"))
+        await input_channel.send(mc.prettify("Please Wait...", "YELLOW"))
+        if not await self.dkp.load_dkp_chars(force_remote=True):
+            await input_channel.send(mc.prettify("Error: Remote points page is unreachable", "YELLOW"))
+        else:
+            await input_channel.send(mc.prettify("Remote Points Loaded", "YELLOW"))
+        if not await self.dkp.load_dkp_raids(force_remote=True):
+            await input_channel.send(mc.prettify("Error: Remote raids page is unreachable", "YELLOW"))
+        else:
+            await input_channel.send(mc.prettify("Remote Raids Loaded", "YELLOW"))
 
         # Refresh the DKP status of players
         utils.refresh_dkp_status(self.raid_list, self.dkp.users)
+
+        utils.raid_autosave(self.raid_list)
 
     ####
     # DKP ADJUST

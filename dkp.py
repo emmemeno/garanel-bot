@@ -31,7 +31,7 @@ class Dkp:
         self.raids_last_read = None
         self.last_rest_error = None
 
-    async def load_dkp_chars(self):
+    async def load_dkp_chars(self, force_remote=False):
         main_counter = 0
         char_counter = 0
 
@@ -40,6 +40,8 @@ class Dkp:
             log.info("EQDKP: Remote Points loaded")
             self.save_local_chars()
             log.info("EQDKP: Saved Points locally.")
+        elif force_remote:
+            return False
         elif self.load_local_chars():
             self.points_last_read = datetime.datetime.utcfromtimestamp(os.path.getmtime(config.LOCAL_DKP_POINTS))
             log.info("EQDKP: Local Points loaded")
@@ -100,12 +102,14 @@ class Dkp:
         except KeyError:
             return False
 
-    async def load_dkp_raids(self):
+    async def load_dkp_raids(self, force_remote=False):
         if await self.load_remote_raids():
             self.raids_last_read = timeh.now()
             log.info("EQDKP: Remote Raids loaded")
             self.save_local_raids()
             log.info("EQDKP: Saved Raids locally.")
+        elif force_remote:
+            return False
         elif self.load_local_raids():
             self.raids_last_read = datetime.datetime.utcfromtimestamp(os.path.getmtime(config.LOCAL_DKP_RAIDS))
             log.info("EQDKP: Local Raids loaded")
@@ -115,6 +119,7 @@ class Dkp:
         self.dkp_raids = dkp_raids.Raids()
         self.dkp_raids.load(self.raw_raids, self)
         log.info("EQDKP: Local Raids Processed")
+        return True
 
 
     async def load_remote_chars(self):
