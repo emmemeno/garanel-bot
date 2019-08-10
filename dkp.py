@@ -235,7 +235,8 @@ class Dkp:
         adj_data = {'adjustment_date': datetime.datetime.utcnow().strftime(config.DATE_EQDKP_FORMAT),
                     'adjustment_members': [user_id],
                     'adjustment_value': points,
-                    'adjustment_reason': reason
+                    'adjustment_reason': reason,
+                    'adjustment_event_id': config.EQDKP_ADJUSTMENT_EVENT_ID
                    }
         xml_data = dicttoxml.dicttoxml(adj_data, custom_root='request', attr_type=False, item_func=my_item_func)
         log.debug(f"DKP ADJ: {xml_data}")

@@ -215,7 +215,6 @@ class Garanel:
                                                                f"\nAverage Price: {int(round(total_spent/counter))}", "MD")
                 entries_recap = ""
 
-
         if not items_recap:
             if fuzz_results[0][1] > 80:
                 await input_channel.send(mc.prettify(f"Item not found. Did you mean {fuzz_results[0][0]}?", "YELLOW"))
@@ -224,22 +223,18 @@ class Garanel:
             return False
         await input_channel.send(items_recap)
 
-
     ####
     # DKP RELOAD
     ####
     async def cmd_sync(self):
         if not self.my_auth.check("officer", self.input_author):
             return False
-        input_author = self.input_author
         input_channel = self.input_channel
-        input_params = self.input_params
-
+        await input_channel.send(mc.prettify(f"Please Wait...", "YELLOW"))
         await self.dkp.load_dkp_chars()
         await self.dkp.load_dkp_raids()
         utils.raid_autosave(self.raid_list)
-        await input_channel.send(mc.prettify(f"DKP Chars and Raids Reloaded!\n"
-                                             f"Pending Raids saved!", "YELLOW"))
+        await input_channel.send(mc.prettify(f"Done!", "YELLOW"))
 
         # Refresh the DKP status of players
         utils.refresh_dkp_status(self.raid_list, self.dkp.users)
@@ -253,7 +248,7 @@ class Garanel:
         input_author = self.input_author
         input_channel = self.input_channel
         input_params = self.input_params
-
+        log.info(f"DKP_ADJ: {input_author} - {input_params}")
         try:
             char = input_params['char']
             points = input_params['points']
