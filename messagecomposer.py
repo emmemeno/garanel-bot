@@ -103,7 +103,7 @@ def print_dkp_char_list(user_name, chars):
 
 def print_dkp_char_points(points):
     header = "**DKP POINTS**"
-    recap = f"+ Current: {points['current']}\n+ Spent: {points['spent']}\n+ Earned: {points['earned']}"
+    recap = f"+ Current: {points['current']}\n+ Spent: {points['spent']}"
     recap = header + prettify(recap, "MD")
     return recap
 
