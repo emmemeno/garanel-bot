@@ -41,7 +41,7 @@ class Dkp:
             self.save_local_chars()
             log.info("EQDKP: Saved Points locally.")
         elif self.load_local_chars():
-            self.points_last_read = datetime.datetime.fromtimestamp(os.path.getmtime(config.LOCAL_DKP_POINTS))
+            self.points_last_read = datetime.datetime.utcfromtimestamp(os.path.getmtime(config.LOCAL_DKP_POINTS))
             log.info("EQDKP: Local Points loaded")
         else:
             log.info("EQDKP: Error on loading Points")
@@ -107,7 +107,7 @@ class Dkp:
             self.save_local_raids()
             log.info("EQDKP: Saved Raids locally.")
         elif self.load_local_raids():
-            self.raids_last_read = datetime.datetime.fromtimestamp(os.path.getmtime(config.LOCAL_DKP_RAIDS))
+            self.raids_last_read = datetime.datetime.utcfromtimestamp(os.path.getmtime(config.LOCAL_DKP_RAIDS))
             log.info("EQDKP: Local Raids loaded")
         else:
             log.info("EQDKP: Error on loading Raids")

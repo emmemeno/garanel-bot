@@ -191,7 +191,11 @@ class Raid:
                 for player in self.players:
                     # Update the user
                     if char.name == player.name:
-                        dkp_users[user]['pending_raids'].remove(self)
+                        try:
+                            dkp_users[user]['pending_raids'].remove(self)
+                        except Exception as e:
+                            pass
+
                         log.debug(f"RAID SYNC: Deleting {user} from pending raid")
 
     def set_kill(self, mode):
