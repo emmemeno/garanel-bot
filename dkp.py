@@ -121,7 +121,6 @@ class Dkp:
         log.info("EQDKP: Local Raids Processed")
         return True
 
-
     async def load_remote_chars(self):
 
         log.info("EQDKP: Loading Remote Points file...")

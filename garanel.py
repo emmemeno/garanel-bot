@@ -443,8 +443,7 @@ class Garanel:
         self.raid_list.append(raid)
         # And save it on file
         raid.save()
-        # Reorder the save channel list
-        self.raid_list.sort(key=lambda x: x.date, reverse=True)
+
         await self.reorder_raid_channels()
         msg_creation = f"+ Raid {event_name} created by {input_author}" \
                        f" at {timeh.now().strftime(config.DATE_EQ_LOG_FORMAT)} UTC"
@@ -453,6 +452,9 @@ class Garanel:
         await input_channel.send(mc.prettify(f"Raid created", "YELLOW") + f"<#{raid_channel.id}>")
         await raid_channel.send(mc.prettify(msg_creation, "MD"))
         await raid_channel.send(mc.prettify(config.TEXT_WELCOME_TO_RAID, "YELLOW"))
+
+        # Reorder the save channel list
+        self.raid_list.sort(key=lambda x: x.date, reverse=True)
 
     ####
     # CLOSE A RAID
@@ -953,8 +955,6 @@ class Garanel:
                 log.error(f"HOUR DIGEST ERROR: {e}", exc_info=True)
 
             await asyncio.sleep(tic)
-
-
 
 
 def main():

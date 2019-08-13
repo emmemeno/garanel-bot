@@ -148,6 +148,7 @@ def print_user_pending_raids(user):
     recap = header + prettify(recap, "MD")
     return recap
 
+
 def print_roles_list(bot_roles, discord_guild_roles):
     bot_roles_list = ""
     for bot_role in bot_roles:
