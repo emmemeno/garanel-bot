@@ -158,6 +158,11 @@ class LineParser:
             if len(points):
                 self.set_param('raid_points', int(points[0]))
 
+        if self.is_action('raid_list'):
+            timeframe = re.findall(r'(week|month)', self.low_line)
+            if len(timeframe):
+                self.set_param('timeframe', timeframe[0])
+
         if self.is_action('dkp_mainchar_add'):
             self.set_param('main_char', self.parse_first_word().capitalize())
 

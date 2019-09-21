@@ -18,15 +18,15 @@ class Raid:
         self.attendees = attendees
 
     def __repr__(self):
-        return self.raid_id
+        return f"{self.date} - {self.event_name}"
 
 
 class Raids:
 
     def __init__(self):
-        self.raids_list = list()
+        self.raid_list = list()
         self.raid_dict = {}
-        self.raid_last_ten_days = list()
+        self.raid_last_seven_days = list()
         self.raid_last_thirty_days = list()
         self.raid_last_ninety_days = list()
         self.raids_by_user_id = {}
@@ -51,15 +51,16 @@ class Raids:
 
                 raid = Raid(raid_id, raid_event_id, raid_event_name, raid_note, raid_date, raid_attendees)
 
-                if raid_date + timedelta(days=10) > timeh.now():
-                    self.raid_last_ten_days.append(raid)
+                # print(f"{raid_event_name} - {raid_date} vs {timeh.now()}")
+                if raid_date + timedelta(days=7) > timeh.now():
+                    self.raid_last_seven_days.append(raid)
                 if raid_date + timedelta(days=30) > timeh.now():
                     self.raid_last_thirty_days.append(raid)
                 if raid_date + timedelta(days=90) > timeh.now():
                     self.raid_last_ninety_days.append(raid)
 
                 self.raid_dict.update({int(raid_id): raid})
-                self.raids_list.append(raid)
+                self.raid_list.append(raid)
                 # Add to dict by users
                 for attendee_id in raid_attendees:
                     if attendee_id not in self.raids_by_user_id:
@@ -68,3 +69,25 @@ class Raids:
 
             except Exception as e:
                 log.debug(f"LOAD RAID: Error {e}")
+
+    def get_raids(self, timeframe, limit=100):
+        raid_list = self.raid_list
+        if timeframe == 'week':
+            raid_list = self.raid_last_seven_days
+        if timeframe == 'month':
+            raid_list = self.raid_last_thirty_days
+
+        output = list()
+        counter = 0
+        for raid in raid_list:
+            output.append({'name': raid.event_name,
+                           'date': raid.date,
+                           'attendees': len(raid.attendees),
+                           'note': raid.note
+                           })
+            counter += 1
+            if counter == limit:
+                break
+
+        return output
+

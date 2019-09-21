@@ -12,12 +12,12 @@ import dkp_raids
 
 log = logging.getLogger("Garanel")
 
-
 class DkpChar:
 
     def __init__(self, char_id, char_name):
         self.id = char_id
         self.name = char_name
+
 
 class Dkp:
 
@@ -102,25 +102,6 @@ class Dkp:
         except KeyError:
             return False
 
-    async def load_dkp_raids(self, force_remote=False):
-        if await self.load_remote_raids():
-            self.raids_last_read = timeh.now()
-            log.info("EQDKP: Remote Raids loaded")
-            self.save_local_raids()
-            log.info("EQDKP: Saved Raids locally.")
-        elif force_remote:
-            return False
-        elif self.load_local_raids():
-            self.raids_last_read = datetime.datetime.utcfromtimestamp(os.path.getmtime(config.LOCAL_DKP_RAIDS))
-            log.info("EQDKP: Local Raids loaded")
-        else:
-            log.info("EQDKP: Error on loading Raids")
-            return False
-        self.dkp_raids = dkp_raids.Raids()
-        self.dkp_raids.load(self.raw_raids, self)
-        log.info("EQDKP: Local Raids Processed")
-        return True
-
     async def load_remote_chars(self):
 
         log.info("EQDKP: Loading Remote Points file...")
@@ -142,6 +123,25 @@ class Dkp:
         if utils.save_local_json(config.LOCAL_DKP_POINTS, self.raw_points):
             return True
         return False
+
+    async def load_dkp_raids(self, force_remote=False):
+        if await self.load_remote_raids():
+            self.raids_last_read = timeh.now()
+            log.info("EQDKP: Remote Raids loaded")
+            self.save_local_raids()
+            log.info("EQDKP: Saved Raids locally.")
+        elif force_remote:
+            return False
+        elif self.load_local_raids():
+            self.raids_last_read = datetime.datetime.utcfromtimestamp(os.path.getmtime(config.LOCAL_DKP_RAIDS))
+            log.info("EQDKP: Local Raids loaded")
+        else:
+            log.info("EQDKP: Error on loading Raids")
+            return False
+        self.dkp_raids = dkp_raids.Raids()
+        self.dkp_raids.load(self.raw_raids, self)
+        log.info("EQDKP: Local Raids Processed")
+        return True
 
     async def load_remote_raids(self):
 

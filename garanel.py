@@ -14,6 +14,7 @@ import dkp
 import timehandler as timeh
 import helper
 from datetime import datetime
+from datetime import timedelta
 import sys
 from fuzzywuzzy import process as fuzz_process
 # from pprint import pprint
@@ -38,6 +39,7 @@ def setup_logger(name, log_file, level):
     logger.addHandler(stream_handler)
 
     return logger
+
 
 class Garanel:
 
@@ -108,13 +110,14 @@ class Garanel:
         self.input_params = lp.get_params()
         try:
             await self.call_function(action)
-        except asyncio.CancelledError as e:
+
+        except asyncio.CancelledError:
             pass
         except Exception as e:
             log.error(f"INPUT ERROR: {e}", exc_info=True)
 
         # Clear temporary variables
-        self.auth = False
+        self.my_auth = False
         self.input_author = None
         self.input_channel = None
         self.input_params = None
@@ -168,15 +171,42 @@ class Garanel:
         dkp_recap = mc.print_dkp_char_points(points)
         items_recap = mc.print_dkp_user_items(self.dkp.dkp_items.get_items_by_user(user))
         chars_recap = mc.print_dkp_char_list(user, chars)
+        # Raids recap stuff
+        dkp_raids = list()
+        for char in chars:
+            if str(char.id) in self.dkp.dkp_raids.raids_by_user_id:
+                for raid in self.dkp.dkp_raids.raids_by_user_id[str(char.id)]:
+                    dkp_raids.append(raid)
+        dkp_raids.sort(key=lambda x: x.date, reverse=True)
+        ra_week = 0
+        ra_month = 0
+        ra_three_months = 0
+        ra_life = 0
+
+        for dkp_raid in dkp_raids:
+            ra_life += 1
+            if dkp_raid.date + timedelta(days=90) > timeh.now():
+                ra_three_months += 1
+            if dkp_raid.date + timedelta(days=30) > timeh.now():
+                ra_month += 1
+            if dkp_raid.date + timedelta(days=7) > timeh.now():
+                ra_week += 1
+
+        ra_recap = mc.print_raid_attendance(ra_week, ra_month, ra_three_months, ra_life,
+                                            len(self.dkp.dkp_raids.raid_last_seven_days),
+                                            len(self.dkp.dkp_raids.raid_last_thirty_days),
+                                            len(self.dkp.dkp_raids.raid_last_ninety_days),
+                                            len(self.dkp.dkp_raids.raid_list))
 
         if 'info' in input_params:
-            raids_recap = mc.print_dkp_user_raids(self.dkp.dkp_raids.raids_by_user_id, chars, self.dkp)
+            raids_recap = mc.print_dkp_user_raids(dkp_raids)
             pending_raids_recap = mc.print_user_pending_raids(self.dkp.users[user])
         else:
             raids_recap = pending_raids_recap = ""
 
-        recap = chars_recap + dkp_recap + items_recap + raids_recap + pending_raids_recap + \
-                f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
+        recap = chars_recap + dkp_recap + ra_recap + items_recap + raids_recap + pending_raids_recap + \
+            f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
+
         if 'info' in input_params:
             await input_author.send(recap)
         else:
@@ -198,7 +228,7 @@ class Garanel:
             await input_channel.send(mc.prettify("Missing parameter", "YELLOW"))
             return False
         fuzz_results = fuzz_process.extract(item_search, self.dkp.dkp_items.items_list, limit=5)
-        items_recap = ""
+        items_recap = list()
         items_title_recap = ""
         entries_recap = ""
 
@@ -212,11 +242,17 @@ class Garanel:
                 counter = 0
                 for entry in entries:
                     counter += 1
-                    total_spent += entry['value']
-                    entries_recap += f"+ { entry['winner']}: {entry['value']}\n"
+                    # Discard 0 points entries
+                    if entry['value']:
+                        total_spent += entry['value']
 
-                items_recap += items_title_recap + mc.prettify(entries_recap +
-                                                               f"\nAverage Price: {int(round(total_spent/counter))}", "MD")
+                    entries_recap += f"+ { entry['winner']}: {entry['value']}\n"
+                    if counter == 10:
+                        entries_recap += "...\n"
+                        break
+
+                entries_recap += f"\nAverage Price: {int(round(total_spent/counter))}"
+                items_recap.append(items_title_recap + mc.prettify(entries_recap, "MD") + "\n")
                 entries_recap = ""
 
         if not items_recap:
@@ -225,7 +261,39 @@ class Garanel:
                 return False
             await input_channel.send(mc.prettify("Item not found", "YELLOW"))
             return False
-        await input_channel.send(items_recap)
+        print(items_recap)
+        for item in items_recap:
+            await input_channel.send(item)
+
+    ####
+    # RAID LIST
+    ####
+    async def cmd_raid_list(self):
+        input_author = self.input_author
+        input_channel = self.input_channel
+        input_params = self.input_params
+
+        dkp_raids = self.dkp.dkp_raids
+        try:
+            timeframe = input_params['timeframe']
+            header = f"**Raids in the last {timeframe}**\n"
+            limit = 200
+            destination = input_author
+        except KeyError:
+            timeframe = 0
+            limit = 10
+            header = f"**Latest {limit} Raids**\n"
+            destination = input_channel
+
+        raid_list = mc.print_raid_list(dkp_raids.get_raids(timeframe, limit))
+        raid_list = mc.message_cut(raid_list, 1900)
+        counter = 0
+        for msg in raid_list:
+            if counter == 1:
+                header = ""
+            counter += 1
+            await destination.send(header + mc.prettify(msg, "MD"))
+
 
     ####
     # DKP RELOAD
@@ -263,7 +331,7 @@ class Garanel:
             char = input_params['char']
             points = input_params['points']
         except KeyError:
-            await input_channel.send(mc.prettify("Missing char name", "YELLOW"))
+            await input_channel.send(mc.prettify("Missing parameter", "YELLOW"))
             return False
 
         if "reason" in input_params:
@@ -277,7 +345,8 @@ class Garanel:
             return False
         user = self.dkp.users[user_name]
         await self.dkp.add_adjustment(user['user_id'], points, reason)
-        user['dkp']['current'] += int(points)
+        # TODO (BUG?): with no realtime update $sync is needed to get the real dkp points after this command
+        # user['dkp']['current'] += int(points)
         await self.input_channel.send(mc.prettify(f"{user_name} earned {points} DKP = {reason}", "YELLOW"))
 
     ####

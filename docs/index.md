@@ -8,10 +8,11 @@
   [$who}          - Get chars family and DKP points
   [$item}         - Get item history
   [$sync]         - Reload All Chars and DKP*
+  [$raid-list]    - Print a list of added Raids
   [$raid-add]     - Add a Raid
   [$mainchar-add] - Add a Main Character*
   [$char-add]     - Add a Character to eqdkp website
-  [$dkp-adj]       - Send an adjustment to eqdkp website
+  [$dkp-adj]      - Send an adjustment to eqdkp website
   
 ```
 **Commands only available in specific raid channels**
@@ -35,6 +36,7 @@ _* Officer only command_
 More help for commands:
 ```
  $help who
+ $help raid-list
  $help item-add
  $help char-add
  $help dkp-adj

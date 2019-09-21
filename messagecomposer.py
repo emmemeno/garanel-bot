@@ -14,7 +14,6 @@ def message_cut(input_text: str, limit: int):
     output = list()
 
     while len(input_text) > limit:
-
         # find a smart new limit based on newline...
         smart_limit = input_text[0:limit].rfind('\n') + 1
         if smart_limit == -1:
@@ -56,6 +55,16 @@ def prettify(text: str, my_type="BLOCK"):
 
 def header_sep(header, sep="-"):
     return (sep * len(header.strip())) + "\n"
+
+
+def print_raid_list(raid_list):
+
+    output = ""
+    for raid in raid_list:
+        output += f"- {raid['date'].strftime('%b %d %H:%M')} - {raid['name']} ({raid['attendees']}) ({raid['note']})\n"
+    if not output:
+        output = "Empty :("
+    return output
 
 
 def print_raid_attendees(raid: Raid, filter="ALL"):
@@ -111,29 +120,45 @@ def print_dkp_char_points(points):
 def print_dkp_user_items(items):
     if not items:
         return ""
+    counter = 0
     header = "**ITEMS**"
     recap = ""
     for item in items:
         recap += f"+ {item['name']}: {item['value']}\n"
+        counter += 1
+        if counter == 10:
+            recap += "...\n"
+            break
     recap = header + prettify(recap, "MD")
     return recap
 
 
-def print_dkp_user_raids(raids_by_char, chars, dkp):
-    counter = 0
-    if not raids_by_char:
-        return ""
+def print_raid_attendance(my_week, my_month, my_three_monhts, my_life,
+                          total_week, total_month, total_three_months, total_life):
+
+    header = "**RAID ATTENDANCE**"
+    recap = f"+ Last Week: {my_week}/{total_week} ({int(round(my_week/total_week*100, 0))}%)\n" \
+            f"+ Last Month: {my_month}/{total_month} ({int(round(my_month/total_month*100, 0))}%)\n"\
+            f"+ Last 3 Months: {my_three_monhts}/{total_three_months} ({int(round(my_three_monhts/total_three_months*100, 0))}%)\n" \
+            f"+ Life: {my_life}/{total_life} ({int(round(my_life/total_life*100, 0))}%)\n"
+
+    recap = header + prettify(recap, "MD")
+    return recap
+
+
+def print_dkp_user_raids(dkp_raids):
+
+    counter_output = 0
     header = "**LATEST RAIDS**"
     recap = ""
-    for char in chars:
-        if str(char.id) in raids_by_char:
-            for raid in raids_by_char[str(char.id)]:
-                counter += 1
-                recap += f"+ {raid.event_name} - {raid.date.strftime('%b %d')}\n"
-                if counter == 5:
-                    break
-        if counter == 5:
+
+    for dkp_raid in dkp_raids:
+        recap += f"+ {dkp_raid.event_name} - {dkp_raid.date.strftime('%b %d')}\n"
+        counter_output += 1
+        if counter_output == 10:
             break
+    if not recap:
+        recap == "Empty :("
     recap = header + prettify(recap, "MD")
     return recap
 
