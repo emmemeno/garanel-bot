@@ -117,7 +117,6 @@ class Garanel:
             log.error(f"INPUT ERROR: {e}", exc_info=True)
 
         # Clear temporary variables
-        self.my_auth = False
         self.input_author = None
         self.input_channel = None
         self.input_params = None
