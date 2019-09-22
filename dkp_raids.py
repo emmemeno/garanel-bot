@@ -2,6 +2,7 @@ from datetime import datetime
 from datetime import timedelta
 import timehandler as timeh
 import logging
+import config
 
 
 
@@ -36,7 +37,7 @@ class Raids:
             return False
 
         for entry in eqdkp_dict:
-            if entry == 'status':
+            if entry == 'status' or int(eqdkp_dict[entry]['event_id']) in config.EQDKP_EXCLUDED_EVENTS_FROM_RA:
                 continue
 
             try:
