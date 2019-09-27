@@ -387,7 +387,7 @@ class Garanel:
         input_channel = self.input_channel
         input_params = self.input_params
 
-        if input_params['mainchar']:
+        if 'mainchar' in input_params:
             if not self.my_auth.check("officer", self.input_author):
                 await input_channel.send(mc.prettify(f"You need officer role to add a char to a different main char", "YELLOW"))
                 return False
