@@ -403,8 +403,6 @@ class Garanel:
         else:
             discord_user_name = str(self.input_author)
 
-        print(f"DISCORD USER NAME: -{discord_user_name}-")
-
         user = self.dkp.get_user_by_char_name(discord_user_name)
 
         if not user:

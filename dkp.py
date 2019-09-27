@@ -175,7 +175,7 @@ class Dkp:
     def get_user_by_char_name(self, name):
         for user in self.users:
             for char in self.users[user]['chars']:
-                if name == char.name:
+                if name.lower() == char.name.lower():
                     return user
         return False
 
