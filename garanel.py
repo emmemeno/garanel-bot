@@ -387,20 +387,23 @@ class Garanel:
         input_channel = self.input_channel
         input_params = self.input_params
 
+        try:
+            char = input_params['char']
+        except KeyError:
+            await input_channel.send(mc.prettify("Missing char name", "YELLOW"))
+            return False
+
         if 'mainchar' in input_params:
             if not self.my_auth.check("officer", self.input_author):
                 await input_channel.send(mc.prettify(f"You need officer role to add a char to a different main char", "YELLOW"))
                 return False
             else:
                 discord_user_name = input_params['mainchar']
+
         else:
             discord_user_name = str(self.input_author)
 
-        try:
-            char = input_params['char']
-        except KeyError:
-            await input_channel.send(mc.prettify("Missing char name", "YELLOW"))
-            return False
+        print(f"DISCORD USER NAME: -{discord_user_name}-")
 
         user = self.dkp.get_user_by_char_name(discord_user_name)
 
