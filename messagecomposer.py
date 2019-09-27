@@ -135,12 +135,15 @@ def print_dkp_user_items(items):
 
 def print_raid_attendance(my_week, my_month, my_three_monhts, my_life,
                           total_week, total_month, total_three_months, total_life):
-
+    week = int(round(my_week/total_week*100, 0)) if total_week else 0
+    month = int(round(my_month/total_month*100, 0)) if total_month else 0
+    three_months = int(round(my_three_monhts/total_three_months*100, 0)) if total_three_months else 0
+    life = int(round(my_life/total_life*100, 0)) if total_life else 0
     header = "**RAID ATTENDANCE**"
-    recap = f"+ Last Week: {my_week}/{total_week} ({int(round(my_week/total_week*100, 0))}%)\n" \
-            f"+ Last Month: {my_month}/{total_month} ({int(round(my_month/total_month*100, 0))}%)\n"\
-            f"+ Last 3 Months: {my_three_monhts}/{total_three_months} ({int(round(my_three_monhts/total_three_months*100, 0))}%)\n" \
-            f"+ Life: {my_life}/{total_life} ({int(round(my_life/total_life*100, 0))}%)\n"
+    recap = f"+ Last Week: {my_week}/{total_week} ({week}%)\n" \
+            f"+ Last Month: {my_month}/{total_month} ({month}%)\n"\
+            f"+ Last 3 Months: {my_three_monhts}/{total_three_months} ({three_months}%)\n" \
+            f"+ Life: {my_life}/{total_life} ({life}%)\n"
 
     recap = header + prettify(recap, "MD")
     return recap
