@@ -142,6 +142,9 @@ class Garanel:
     async def cmd_who(self):
         # if not self.my_auth.check("member:applicant", self.input_author):
         #     return False
+        if not self.my_auth.check_channel(self.input_channel):
+            return False
+
         input_author = self.input_author
         input_channel = self.input_channel
         input_params = self.input_params
@@ -163,48 +166,56 @@ class Garanel:
 
         chars = self.dkp.get_chars_by_user_name(user)
         points = self.dkp.get_points_by_user_name(user)
+        pending_items_points = utils.get_pending_items_points(chars, self.raid_list)
 
         if not chars:
             await input_channel.send(mc.prettify(f"+ {who} has no characters", "MD"))
+            return False
 
-        dkp_recap = mc.print_dkp_char_points(points)
-        items_recap = mc.print_dkp_user_items(self.dkp.dkp_items.get_items_by_user(user))
-        chars_recap = mc.print_dkp_char_list(user, chars)
-        # Raids recap stuff
-        dkp_raids = list()
-        for char in chars:
-            if str(char.id) in self.dkp.dkp_raids.raids_by_user_id:
-                for raid in self.dkp.dkp_raids.raids_by_user_id[str(char.id)]:
-                    dkp_raids.append(raid)
-        dkp_raids.sort(key=lambda x: x.date, reverse=True)
-        ra_week = 0
-        ra_month = 0
-        ra_three_months = 0
-        ra_life = 0
+        recap = mc.print_dkp_char_list(user, chars)
+        if 'items' not in input_params and  'raids' not in input_params:
+            dkp_recap = mc.print_dkp_char_points(points, pending_items_points)
+            recap += dkp_recap
 
-        for dkp_raid in dkp_raids:
-            ra_life += 1
-            if dkp_raid.date + timedelta(days=90) > timeh.now():
-                ra_three_months += 1
-            if dkp_raid.date + timedelta(days=30) > timeh.now():
-                ra_month += 1
-            if dkp_raid.date + timedelta(days=7) > timeh.now():
-                ra_week += 1
+        #  If items param is passed print all items
+        if 'items' in input_params:
+            item_limit = 0
+            items_recap = mc.print_dkp_user_items(self.dkp.dkp_items.get_items_by_user(user), item_limit)
+            pending_items_recap = mc.print_user_pending_items(self.dkp.users[user])
+            recap += pending_items_recap + items_recap
 
-        ra_recap = mc.print_raid_attendance(ra_week, ra_month, ra_three_months, ra_life,
-                                            len(self.dkp.dkp_raids.raid_last_seven_days),
-                                            len(self.dkp.dkp_raids.raid_last_thirty_days),
-                                            len(self.dkp.dkp_raids.raid_last_ninety_days),
-                                            len(self.dkp.dkp_raids.raid_list))
+        if 'raids' in input_params:
+            # Raids recap stuff
+            dkp_raids = list()
+            for char in chars:
+                if str(char.id) in self.dkp.dkp_raids.raids_by_user_id:
+                    for raid in self.dkp.dkp_raids.raids_by_user_id[str(char.id)]:
+                        dkp_raids.append(raid)
+            dkp_raids.sort(key=lambda x: x.date, reverse=True)
+            ra_week = 0
+            ra_month = 0
+            ra_three_months = 0
+            ra_life = 0
 
-        if 'info' in input_params:
+            for dkp_raid in dkp_raids:
+                ra_life += 1
+                if dkp_raid.date + timedelta(days=90) > timeh.now():
+                    ra_three_months += 1
+                if dkp_raid.date + timedelta(days=30) > timeh.now():
+                    ra_month += 1
+                if dkp_raid.date + timedelta(days=7) > timeh.now():
+                    ra_week += 1
+
+            ra_recap = mc.print_raid_attendance(ra_week, ra_month, ra_three_months, ra_life,
+                                                len(self.dkp.dkp_raids.raid_last_seven_days),
+                                                len(self.dkp.dkp_raids.raid_last_thirty_days),
+                                                len(self.dkp.dkp_raids.raid_last_ninety_days),
+                                                len(self.dkp.dkp_raids.raid_list))
             raids_recap = mc.print_dkp_user_raids(dkp_raids)
             pending_raids_recap = mc.print_user_pending_raids(self.dkp.users[user])
-        else:
-            raids_recap = pending_raids_recap = ""
+            recap += ra_recap + pending_raids_recap + raids_recap
 
-        recap = chars_recap + dkp_recap + ra_recap + items_recap + raids_recap + pending_raids_recap + \
-            f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
+        recap += f"_Last Read: {timeh.countdown(self.dkp.points_last_read, timeh.now())} ago_"
 
         if 'info' in input_params:
             await input_author.send(recap)
@@ -215,6 +226,10 @@ class Garanel:
     # ITEM
     ####
     async def cmd_item(self):
+
+        if not self.my_auth.check_channel(self.input_channel):
+            return False
+
         input_author = self.input_author
         input_channel = self.input_channel
         input_params = self.input_params
@@ -268,6 +283,9 @@ class Garanel:
     # RAID LIST
     ####
     async def cmd_raid_list(self):
+        if not self.my_auth.check_channel(self.input_channel):
+            return False
+
         input_author = self.input_author
         input_channel = self.input_channel
         input_params = self.input_params
@@ -292,7 +310,6 @@ class Garanel:
                 header = ""
             counter += 1
             await destination.send(header + mc.prettify(msg, "MD"))
-
 
     ####
     # DKP RELOAD
@@ -354,6 +371,10 @@ class Garanel:
     async def cmd_dkp_mainchar_add(self):
         if not self.my_auth.check("officer", self.input_author):
             return False
+
+        if not self.my_auth.check_channel(self.input_channel):
+            return False
+
         input_author = self.input_author
         input_channel = self.input_channel
         input_params = self.input_params
@@ -381,6 +402,9 @@ class Garanel:
     ####
     async def cmd_dkp_char_add(self):
         if not self.my_auth.check("member:applicant", self.input_author):
+            return False
+
+        if not self.my_auth.check_channel(self.input_channel):
             return False
 
         input_author = self.input_author
@@ -461,6 +485,9 @@ class Garanel:
     ####
     async def cmd_raid_add(self):
         if not self.my_auth.check("member:applicant", self.input_author):
+            return False
+
+        if not self.my_auth.check_channel(self.input_channel):
             return False
 
         input_author = self.input_author
@@ -868,24 +895,24 @@ class Garanel:
             return False
 
         try:
-            points = input_params['item_dkp']
+            points = int(input_params['item_dkp'])
         except KeyError:
             await input_channel.send(mc.prettify(f"Missing dkp value. {help_text}", "YELLOW"))
             return False
 
         try:
-            winner = input_params['item_winner']
+            winner_char = input_params['item_winner']
         except KeyError:
             await input_channel.send(mc.prettify(f"Missing winner name. {help_text}", "YELLOW"))
             return False
 
-        winner_player = self.dkp.get_user_by_char_name(winner)
+        winner_player = self.dkp.get_user_by_char_name(winner_char)
         if not winner_player:
-            await input_channel.send(mc.prettify(f"Char {winner} is missing from EQDKP website\n", "YELLOW"))
+            await input_channel.send(mc.prettify(f"Char {winner_char} is missing from EQDKP website\n", "YELLOW"))
             return False
 
-        raid.add_item(name, points, winner)
-        await input_channel.send(mc.prettify(f"+ {name} won by {winner} for {points} DKP. Grats!", "MD"))
+        raid.add_item(name, points, winner_char, self.dkp.users[winner_player])
+        await input_channel.send(mc.prettify(f"+ {name} won by {winner_char} for {points} DKP. Grats!", "MD"))
 
     ####
     # WIPE ALL ITEMS

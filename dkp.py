@@ -91,7 +91,8 @@ class Dkp:
                                                'earned': dkp_earned},
                                        'chars': [],
                                        'raids': [],
-                                       'pending_raids': []}})
+                                       'pending_raids': []
+                                       }})
         return True
 
     def add_new_char(self, char_id, char_name, main_name):

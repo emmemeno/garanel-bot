@@ -4,6 +4,9 @@ import config
 import json
 from datetime import datetime
 
+log = logging.getLogger("Garanel")
+
+
 class Player:
     def __init__(self, name, anon=False, lvl=None, role=None, race=None, afk=False, eqdkp=None):
         self.name = name
@@ -42,7 +45,16 @@ class Player:
                 }
 
 
-log = logging.getLogger("Garanel")
+class Item:
+    def __init__(self, name, char_winner, points):
+        self.name = name
+        self.char_winner = char_winner
+        self.points = points
+
+    def serialize(self):
+        return {"name": self.name,
+                "char_winner": self.char_winner,
+                "points": self.points}
 
 
 class Raid:
@@ -119,10 +131,9 @@ class Raid:
         else:
             return False
 
-    def add_item(self, name: str, points, winner: Player):
-        if name in self.items:
-            return False
-        self.items.append({'name': name, 'points': points, 'winner': winner})
+    def add_item(self, name: str, points, char_winner: Player, user_winner):
+        item = Item(name, char_winner, points)
+        self.items.append(item)
         self.status_save = True
 
     def wipe_items(self):
@@ -156,6 +167,14 @@ class Raid:
 
         return output_players
 
+    def get_item_by_user(self, user):
+        pending_items = []
+        for item in self.items:
+            for char in user['chars']:
+                if item.char_winner == char.name:
+                    pending_items.append(item)
+        return pending_items
+
     def get_player_eqdkp_id_list(self):
         output = []
         for player in self.players:
@@ -182,6 +201,9 @@ class Raid:
                         log.debug(f"RAID SYNC: {user} added to pending raid")
                     else:
                         char.eqdkp_id = False
+                for item in self.items:
+                    pass
+
         log.info(f"RAID SYNC: {self.name_id}: Done!")
 
     def delete_pending_raids_from_user(self, dkp_users):
@@ -197,6 +219,7 @@ class Raid:
                             pass
 
                         log.debug(f"RAID SYNC: Deleting {user} from pending raid")
+
 
     def set_kill(self, mode):
         self.kill = mode
@@ -225,6 +248,9 @@ class Raid:
 
     def serialize(self):
         player_list = []
+        item_list = []
+        for item in self.items:
+            item_list.append(item.serialize())
         for char in self.players:
             player_list.append(char.serialize())
         return {'name_id': self.name_id,
@@ -238,7 +264,7 @@ class Raid:
                 'log_loaded': self.log_loaded,
                 'log_final': self.log_final,
                 'players': player_list,
-                'items': self.items
+                'items': item_list
                 }
 
     def autosave(self):

@@ -5,6 +5,7 @@ import aiohttp
 import json
 from raid import Raid
 from raid import Player
+from raid import Item
 from discord import File
 import messagecomposer as mc
 import logging
@@ -32,7 +33,9 @@ def load_raids(path):
                                       char['afk'],
                                       char['eqdkp_id']))
         for item in raid['items']:
-            item_list.append(item)
+            item_list.append(Item(item['name'],
+                                  item['char_winner'],
+                                  int(item['points'])))
         # TODO: delete after first json save
         event_name = event_id = None
         if 'event_name' in raid:
@@ -77,6 +80,15 @@ def get_raid_by_channel_input_id(raid_list, channel_id):
         if raid.discord_channel_id == channel_id:
             return raid
     return False
+
+def get_pending_items_points(chars, raids):
+    points = 0
+    for raid in raids:
+        for item in raid.items:
+            for char in chars:
+                if char.name == item.char_winner:
+                    points += item.points
+    return points
 
 
 async def load_remote_json(url, params):

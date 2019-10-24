@@ -1,9 +1,11 @@
 **$who**
 -
-This command will output info about you or a guildy one. Use `info` keyword to get longest information
+This command will output info about you or a guildy one. Use `raids` keyword to get raid information or `items` for
+full items list
+
 ```md
 $who
 $who info
 $who Bob
-$who Bob info
+$who Bob items
 ```

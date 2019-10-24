@@ -5,6 +5,7 @@ import logging
 
 log = logging.getLogger("Garanel")
 
+
 class Auth:
     def __init__(self):
         self.roles = []
@@ -41,8 +42,12 @@ class Auth:
     def check_owner(self, discord_id):
         if discord_id == config.OWNER_ID:
             return True
-        else:
-            return False
+        return False
+
+    def check_channel(self, input_channel):
+        if isinstance(input_channel, discord.DMChannel) or input_channel.id in config.PUBLIC_CHANNEL_ID:
+            return True
+        return False
 
     def set_role(self, bot_role, discord_id):
         if bot_role not in self.roles:

@@ -82,7 +82,7 @@ def print_raid_items(raid: Raid):
     output = ""
     for item in raid.items:
 
-        output += f"+ {item['name']}: {item['points']} DKP to {item['winner']}\n"
+        output += f"+ {item.name}: {item.points} DKP to {item.char_winner}\n"
     return output
 
 
@@ -110,23 +110,24 @@ def print_dkp_char_list(user_name, chars):
     return recap
 
 
-def print_dkp_char_points(points):
+def print_dkp_char_points(points, pending_items_points):
     header = "**DKP POINTS**"
-    recap = f"+ Current: {points['current']}\n+ Spent: {points['spent']}"
+    recap = f"+ Current: {points['current']}\n" \
+            f"+ Spendable: {points['current'] - pending_items_points}"
     recap = header + prettify(recap, "MD")
     return recap
 
 
-def print_dkp_user_items(items):
+def print_dkp_user_items(items, limit=0):
     if not items:
         return ""
     counter = 0
     header = "**ITEMS**"
     recap = ""
-    for item in items:
+    for item in reversed(items):
         recap += f"+ {item['name']}: {item['value']}\n"
         counter += 1
-        if counter == 10:
+        if counter == limit and not limit == 0:
             recap += "...\n"
             break
     recap = header + prettify(recap, "MD")
@@ -161,7 +162,7 @@ def print_dkp_user_raids(dkp_raids):
         if counter_output == 10:
             break
     if not recap:
-        recap == "Empty :("
+        recap = "Empty :("
     recap = header + prettify(recap, "MD")
     return recap
 
@@ -171,6 +172,19 @@ def print_user_pending_raids(user):
     recap = ""
     for raid in user['pending_raids']:
         recap += f"+ {raid} - {raid.date.strftime('%b %d %H:%M')}\n"
+    if not recap:
+        return ""
+    recap = header + prettify(recap, "MD")
+    return recap
+
+
+def print_user_pending_items(user):
+    header = "**PENDING ITEMS**"
+    recap = ""
+    for raid in user['pending_raids']:
+        for item in raid.get_item_by_user(user):
+            recap += f"+ {item.name}: {item.points}\n"
+
     if not recap:
         return ""
     recap = header + prettify(recap, "MD")

@@ -99,8 +99,11 @@ class LineParser:
             return reg.group(2)
         return ""
 
-    def parse_word(self, word):
-        regex = r"\b(%s)\b" % word
+    def parse_word(self, word, reg=""):
+        if reg:
+            regex = reg
+        else:
+            regex = r"\b(%s)\b" % word
         reg = re.search(regex, self.low_line)
         if reg:
             self.consume_line(reg.group(1))
@@ -123,7 +126,8 @@ class LineParser:
             self.set_param("dkp_target", self.parse_first_word())
 
         if self.is_action('who'):
-            self.set_param("info", self.parse_word('info'))
+            self.set_param("raids", self.parse_word('raids', r"\b(raids?)\b"))
+            self.set_param("items", self.parse_word("items", r"\b(items?)\b"))
             self.set_param("who", self.parse_first_word().capitalize())
 
         if self.is_action('item'):
