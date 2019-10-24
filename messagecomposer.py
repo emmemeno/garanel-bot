@@ -82,7 +82,7 @@ def print_raid_items(raid: Raid):
     output = ""
     for item in raid.items:
 
-        output += f"+ {item.name}: {item.points} DKP to {item.char_winner}\n"
+        output += f"+ {item.name}: {item.points} DKP to {item.winner}\n"
     return output
 
 

@@ -34,7 +34,7 @@ def load_raids(path):
                                       char['eqdkp_id']))
         for item in raid['items']:
             item_list.append(Item(item['name'],
-                                  item['char_winner'],
+                                  item['winner'],
                                   int(item['points'])))
         # TODO: delete after first json save
         event_name = event_id = None
@@ -86,7 +86,7 @@ def get_pending_items_points(chars, raids):
     for raid in raids:
         for item in raid.items:
             for char in chars:
-                if char.name == item.char_winner:
+                if char.name == item.winner:
                     points += item.points
     return points
 

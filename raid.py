@@ -46,14 +46,14 @@ class Player:
 
 
 class Item:
-    def __init__(self, name, char_winner, points):
+    def __init__(self, name, winner, points):
         self.name = name
-        self.char_winner = char_winner
+        self.winner = winner
         self.points = points
 
     def serialize(self):
         return {"name": self.name,
-                "char_winner": self.char_winner,
+                "winner": self.winner,
                 "points": self.points}
 
 
@@ -131,8 +131,8 @@ class Raid:
         else:
             return False
 
-    def add_item(self, name: str, points, char_winner: Player, user_winner):
-        item = Item(name, char_winner, points)
+    def add_item(self, name: str, points, winner: Player, user_winner):
+        item = Item(name, winner, points)
         self.items.append(item)
         self.status_save = True
 
@@ -171,7 +171,7 @@ class Raid:
         pending_items = []
         for item in self.items:
             for char in user['chars']:
-                if item.char_winner == char.name:
+                if item.winner == char.name:
                     pending_items.append(item)
         return pending_items
 
